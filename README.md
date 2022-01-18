@@ -1,6 +1,12 @@
 # bullseye
 
-A dart server-side web framework.
+A dart server-side web framework. **IN DEVELOPMENT**.
+
+# Goals
+- Simple
+- Leverage Dart's type system 
+- Logic should be in code and not in config files
+- Leverage AOT Dart compilation to outperform a script-based equivalent (php, python, etc.)
 
 # Features
 - [ ] Templating
@@ -14,6 +20,7 @@ A dart server-side web framework.
 - [ ] Cache
 - [ ] Use [dart's annotations](https://api.flutter.dev/flutter/meta/meta-library.html)
 - [ ] REST support with actual abstraction for resources etc.
+- [ ] Session
 
 # Maybe
 - [ ] GraphQL/Grafitti-like

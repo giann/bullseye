@@ -1,8 +1,8 @@
 class NodeAttribute {
-  String key;
-  String value;
+  final String key;
+  final String value;
 
-  NodeAttribute({
+  const NodeAttribute({
     required this.key,
     required this.value,
   });
@@ -13,15 +13,15 @@ class NodeAttribute {
 NodeAttribute attr(String key, String value) => NodeAttribute(key: key, value: value);
 
 abstract class Node {
-  ElementNode? parent;
+  const Node();
 
   String render();
 }
 
 class TextNode extends Node {
-  String text;
+  final String text;
 
-  TextNode(this.text);
+  const TextNode(this.text, {ElementNode? parent}) : super();
 
   @override
   String render() => text;
@@ -30,24 +30,16 @@ class TextNode extends Node {
 TextNode text(String text) => TextNode(text);
 
 class ElementNode extends Node {
-  String tag;
-  Set<NodeAttribute> attributes;
+  final String tag;
+  final Set<NodeAttribute> attributes;
 
-  List<Node> children;
+  final List<Node> children;
 
-  ElementNode(
+  const ElementNode(
     this.tag, {
-    ElementNode? parent,
-    Set<NodeAttribute>? attributes,
-    List<Node>? children,
-  })  : attributes = attributes ?? {},
-        children = children ?? [] {
-    this.parent = parent;
-
-    for (Node child in this.children) {
-      child.parent = this;
-    }
-  }
+    this.attributes = const {},
+    this.children = const [],
+  }) : super();
 
   @override
   String render() {
@@ -74,61 +66,61 @@ class ElementNode extends Node {
 }
 
 // Valid html tags factories
-ElementNode a({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('a', parent: parent, attributes: attributes, children: children);
-ElementNode article({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('article', parent: parent, attributes: attributes, children: children);
-ElementNode aside({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('aside', parent: parent, attributes: attributes, children: children);
-ElementNode audio({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('audio', parent: parent, attributes: attributes, children: children);
-ElementNode br({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('br', parent: parent, attributes: attributes, children: children);
-ElementNode canvas({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('canvas', parent: parent, attributes: attributes, children: children);
-ElementNode div({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('div', parent: parent, attributes: attributes, children: children);
-ElementNode footer({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('footer', parent: parent, attributes: attributes, children: children);
-ElementNode header({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('header', parent: parent, attributes: attributes, children: children);
-ElementNode hr({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('hr', parent: parent, attributes: attributes, children: children);
-ElementNode iframe({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('iframe', parent: parent, attributes: attributes, children: children);
-ElementNode img({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('img', parent: parent, attributes: attributes, children: children);
-ElementNode li({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('li', parent: parent, attributes: attributes, children: children);
-ElementNode nav({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('nav', parent: parent, attributes: attributes, children: children);
-ElementNode ol({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('ol', parent: parent, attributes: attributes, children: children);
-ElementNode option({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('option', parent: parent, attributes: attributes, children: children);
-ElementNode p({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('p', parent: parent, attributes: attributes, children: children);
-ElementNode pre({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('pre', parent: parent, attributes: attributes, children: children);
-ElementNode section({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('section', parent: parent, attributes: attributes, children: children);
-ElementNode select({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('select', parent: parent, attributes: attributes, children: children);
-ElementNode span({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('span', parent: parent, attributes: attributes, children: children);
-ElementNode svg({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('svg', parent: parent, attributes: attributes, children: children);
-ElementNode table({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('table', parent: parent, attributes: attributes, children: children);
-ElementNode td({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('td', parent: parent, attributes: attributes, children: children);
-ElementNode textarea({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('textarea', parent: parent, attributes: attributes, children: children);
-ElementNode th({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('th', parent: parent, attributes: attributes, children: children);
-ElementNode tr({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('tr', parent: parent, attributes: attributes, children: children);
-ElementNode ul({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('ul', parent: parent, attributes: attributes, children: children);
-ElementNode video({ElementNode? parent, Set<NodeAttribute>? attributes, List<Node>? children}) =>
-    ElementNode('video', parent: parent, attributes: attributes, children: children);
+ElementNode a({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('a', attributes: attributes, children: children);
+ElementNode article({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('article', attributes: attributes, children: children);
+ElementNode aside({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('aside', attributes: attributes, children: children);
+ElementNode audio({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('audio', attributes: attributes, children: children);
+ElementNode br({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('br', attributes: attributes, children: children);
+ElementNode canvas({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('canvas', attributes: attributes, children: children);
+ElementNode div({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('div', attributes: attributes, children: children);
+ElementNode footer({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('footer', attributes: attributes, children: children);
+ElementNode header({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('header', attributes: attributes, children: children);
+ElementNode hr({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('hr', attributes: attributes, children: children);
+ElementNode iframe({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('iframe', attributes: attributes, children: children);
+ElementNode img({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('img', attributes: attributes, children: children);
+ElementNode li({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('li', attributes: attributes, children: children);
+ElementNode nav({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('nav', attributes: attributes, children: children);
+ElementNode ol({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('ol', attributes: attributes, children: children);
+ElementNode option({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('option', attributes: attributes, children: children);
+ElementNode p({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('p', attributes: attributes, children: children);
+ElementNode pre({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('pre', attributes: attributes, children: children);
+ElementNode section({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('section', attributes: attributes, children: children);
+ElementNode select({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('select', attributes: attributes, children: children);
+ElementNode span({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('span', attributes: attributes, children: children);
+ElementNode svg({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('svg', attributes: attributes, children: children);
+ElementNode table({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('table', attributes: attributes, children: children);
+ElementNode td({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('td', attributes: attributes, children: children);
+ElementNode textarea({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('textarea', attributes: attributes, children: children);
+ElementNode th({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('th', attributes: attributes, children: children);
+ElementNode tr({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('tr', attributes: attributes, children: children);
+ElementNode ul({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('ul', attributes: attributes, children: children);
+ElementNode video({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('video', attributes: attributes, children: children);

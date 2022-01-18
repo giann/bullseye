@@ -1,10 +1,15 @@
+import 'package:http/http.dart';
+import 'package:meta/meta.dart';
+
 import 'dom.dart';
+import 'router.dart';
 import 'template.dart';
 
+@immutable
 class MyModel {
-  String name;
+  final String name;
 
-  MyModel(this.name);
+  const MyModel(this.name);
 }
 
 class MyView extends Template<MyModel> {
@@ -23,8 +28,19 @@ class MyView extends Template<MyModel> {
   }
 }
 
+class MyController {
+  @Route(
+    name: 'hello',
+    path: '/hello/{name}',
+    methods: {'GET'},
+  )
+  Response hello({required String name}) => Response(MyView(MyModel(name)).render(), 200);
+}
+
 void main(List<String> arguments) {
-  print(
-    MyView(MyModel('Benoit')).render(),
-  );
+  final router = Router();
+
+  router.register(MyController());
+
+  print(router.route(Request('GET', Uri.parse('/hello/Benoit'))).body);
 }

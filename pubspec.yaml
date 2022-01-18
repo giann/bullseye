@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   darty_json: ^1.0.0
+  http: ^0.13.4
 
 dev_dependencies:
   lints: ^1.0.0
