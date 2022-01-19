@@ -22,7 +22,7 @@ class Route {
   int get hashCode => name.hashCode;
 }
 
-typedef RouteCall = Response Function(Map<String, dynamic>);
+typedef RouteCall = Response Function(Request, Map<String, dynamic>);
 
 class BadlyFormedRouteException implements Exception {
   final String? _message;
@@ -35,7 +35,7 @@ class BadlyFormedRouteException implements Exception {
 
 class Router {
   // TODO: should be a tree based on path segments
-  Map<Route, RouteCall> registry = {};
+  final Map<Route, RouteCall> _registry = {};
 
   static final RegExp routeArgPattern = RegExp('{([a-zA-Z0-9_]+)}');
 
@@ -44,7 +44,7 @@ class Router {
     List<String> path = request.url.pathSegments;
 
     // Search for a matching route
-    for (MapEntry<Route, RouteCall> entry in registry.entries) {
+    for (MapEntry<Route, RouteCall> entry in _registry.entries) {
       if (!entry.key.methods.contains(method.toUpperCase())) {
         continue;
       }
@@ -61,16 +61,24 @@ class Router {
 
       // We matched!
       if (matches) {
-        // Extract route parameters
-        Map<String, String> parameters = {};
+        Map<String, dynamic> parameters = <String, dynamic>{};
 
+        // Extract route parameters
         for (int i = 0; i < routeSegments.length; i++) {
           if (routeArgPattern.allMatches(routeSegments[i]).length == 1) {
+            // TODO: convert value to expected type (could be String, int or double)
             parameters[routeArgPattern.firstMatch(routeSegments[i])!.group(1)!] = path[i];
           }
         }
 
-        return entry.value(parameters);
+        // We do that here so a parameter named 'request' does not shadow the [Request] argument
+        parameters.addAll(
+          <String, dynamic>{
+            'request': request,
+          },
+        );
+
+        return entry.value(request, parameters);
       }
     }
 
@@ -110,19 +118,8 @@ class Router {
       throw BadlyFormedRouteException('Route method should return a `Response`');
     }
 
-    // Method arguments have simple types
-    for (ParameterMirror parameter in method.parameters) {
-      if (![String, int, double].contains(parameter.type.reflectedType)) {
-        throw BadlyFormedRouteException('Route method\'s arguments must be of type: String, int or double');
-      }
-    }
-
     // Get route placeholders
     List<Match> routeArgMatches = routeArgPattern.allMatches(route.path).toList(growable: false);
-
-    if (routeArgMatches.length != method.parameters.length) {
-      throw BadlyFormedRouteException('Route method\'s arguments count does not match path parameters count');
-    }
 
     for (Match routeArg in routeArgMatches) {
       bool foundMatch = false;
@@ -142,17 +139,13 @@ class Router {
   void _registerRoute(InstanceMirror controller, MethodMirror method, Route route) {
     // Register a function that will inject parameters as method arguments
     // We don't check here if parameters are matching the method arguments, this is done at register time
-    registry[route] = (final Map<String, dynamic> parameters) => controller
-        .invoke(
+    _registry[route] = (final Request request, final Map<String, dynamic> parameters) => controller.invoke(
           method.simpleName,
           <dynamic>[],
-          // ignore: prefer_for_elements_to_map_fromiterable
-          Map<Symbol, dynamic>.fromIterable(
-            method.parameters,
-            key: (dynamic parameter) => (parameter as ParameterMirror).simpleName,
-            value: (dynamic parameter) => parameters[MirrorSystem.getName((parameter as ParameterMirror).simpleName)],
-          ),
-        )
-        .reflectee as Response;
+          <Symbol, dynamic>{
+            for (ParameterMirror parameter in method.parameters)
+              parameter.simpleName: parameters[MirrorSystem.getName(parameter.simpleName)],
+          },
+        ).reflectee as Response;
   }
 }

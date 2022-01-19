@@ -21,6 +21,7 @@ A dart server-side web framework. **IN DEVELOPMENT**.
 - [ ] Use [dart's annotations](https://api.flutter.dev/flutter/meta/meta-library.html)
 - [ ] REST support with actual abstraction for resources etc.
 - [ ] Session
+- [ ] ORM
 
 # Maybe
 - [ ] GraphQL/Grafitti-like

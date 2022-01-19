@@ -1,46 +1,86 @@
 import 'package:http/http.dart';
-import 'package:meta/meta.dart';
 
 import 'dom.dart';
 import 'router.dart';
+import 'server.dart';
 import 'template.dart';
 
-@immutable
-class MyModel {
-  final String name;
-
-  const MyModel(this.name);
+class MyForm extends Template {
+  @override
+  String render() => div(
+        attributes: <NodeAttribute>{
+          attr('class', 'yolo'),
+        },
+        children: [
+          h1(
+            children: [text('Hello there!')],
+          ),
+          form(
+            action: '/hello',
+            method: 'post',
+            children: [
+              label(
+                $for: 'name',
+                children: [text('What\'s your name?')],
+              ),
+              input(
+                type: 'text',
+                id: 'name',
+                name: 'name',
+              )
+            ],
+          )
+        ],
+      ).render();
 }
 
-class MyView extends Template<MyModel> {
-  MyView(MyModel context) : super(context);
+class MyView extends Template {
+  String name;
+
+  MyView(this.name);
 
   @override
-  String render() {
-    return div(
-      attributes: <NodeAttribute>{
-        attr('class', 'yolo'),
-      },
-      children: [
-        text('hello my name is: ${context?.name ?? 'Unknown'}'),
-      ],
-    ).render();
-  }
+  String render() => div(
+        children: [
+          h1(
+            children: [
+              text('Hello $name'),
+            ],
+          ),
+        ],
+      ).render();
 }
 
 class MyController {
   @Route(
     name: 'hello',
-    path: '/hello/{name}',
+    path: '/hello',
     methods: {'GET'},
   )
-  Response hello({required String name}) => Response(MyView(MyModel(name)).render(), 200);
+  Response hello({required Request request}) => Response(
+        MyForm().render(),
+        200,
+        headers: <String, String>{
+          'content-type': 'text/html; charset=utf-8',
+        },
+      );
+
+  @Route(
+    name: 'hello.answer',
+    path: '/hello',
+    methods: {'POST'},
+  )
+  Response answer({required Request request}) => Response(
+        MyView(request.bodyFields['name'] ?? 'Unknown').render(),
+        200,
+        headers: <String, String>{
+          'content-type': 'text/html; charset=utf-8',
+        },
+      );
 }
 
-void main(List<String> arguments) {
-  final router = Router();
+void main() async {
+  final Router router = Router()..register(MyController());
 
-  router.register(MyController());
-
-  print(router.route(Request('GET', Uri.parse('/hello/Benoit'))).body);
+  Server(router: router).run();
 }

@@ -1,7 +1,3 @@
-abstract class Template<T> {
-  T? context;
-
-  Template(this.context);
-
+abstract class Template {
   String render();
 }

@@ -50,9 +50,9 @@ class ElementNode extends Node {
     }
 
     if (children.isEmpty) {
-      rendered = '/>';
+      rendered += '/>';
     } else {
-      rendered = rendered.trimRight() + '>';
+      rendered += rendered.trimRight() + '>';
 
       for (Node child in children) {
         rendered += child.render();
@@ -63,6 +63,67 @@ class ElementNode extends Node {
 
     return rendered;
   }
+}
+
+ElementNode form({
+  String? action,
+  String? method,
+  Set<NodeAttribute> attributes = const {},
+  List<Node> children = const [],
+}) {
+  if (action != null) {
+    attributes = <NodeAttribute>{}
+      ..addAll(attributes)
+      ..add(NodeAttribute(key: 'action', value: action));
+  }
+
+  if (method != null) {
+    attributes = <NodeAttribute>{}
+      ..addAll(attributes)
+      ..add(NodeAttribute(key: 'method', value: method));
+  }
+
+  return ElementNode('form', attributes: attributes, children: children);
+}
+
+ElementNode label({
+  String? $for,
+  Set<NodeAttribute> attributes = const {},
+  List<Node> children = const [],
+}) {
+  if ($for != null) {
+    attributes = <NodeAttribute>{}
+      ..addAll(attributes)
+      ..add(NodeAttribute(key: 'for', value: $for));
+  }
+
+  return ElementNode('label', attributes: attributes, children: children);
+}
+
+ElementNode input({
+  String? type,
+  String? id,
+  String? name,
+  Set<NodeAttribute> attributes = const {},
+  List<Node> children = const [],
+}) {
+  if (type != null) {
+    attributes = <NodeAttribute>{}
+      ..addAll(attributes)
+      ..add(NodeAttribute(key: 'type', value: type));
+  }
+  if (id != null) {
+    attributes = <NodeAttribute>{}
+      ..addAll(attributes)
+      ..add(NodeAttribute(key: 'id', value: id));
+  }
+  if (name != null) {
+    attributes = <NodeAttribute>{}
+      ..addAll(attributes)
+      ..add(NodeAttribute(key: 'name', value: name));
+  }
+
+  return ElementNode('input', attributes: attributes, children: children);
 }
 
 // Valid html tags factories
@@ -124,3 +185,15 @@ ElementNode ul({Set<NodeAttribute> attributes = const {}, List<Node> children = 
     ElementNode('ul', attributes: attributes, children: children);
 ElementNode video({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
     ElementNode('video', attributes: attributes, children: children);
+ElementNode h1({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h1', attributes: attributes, children: children);
+ElementNode h2({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h2', attributes: attributes, children: children);
+ElementNode h3({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h3', attributes: attributes, children: children);
+ElementNode h4({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h4', attributes: attributes, children: children);
+ElementNode h5({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h5', attributes: attributes, children: children);
+ElementNode h6({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h6', attributes: attributes, children: children);
