@@ -22,7 +22,7 @@ class Route {
   int get hashCode => name.hashCode;
 }
 
-typedef RouteCall = Response Function(Request, Map<String, dynamic>);
+typedef RouteCall = Response Function(Map<String, dynamic>);
 
 class BadlyFormedRouteException implements Exception {
   final String? _message;
@@ -33,9 +33,25 @@ class BadlyFormedRouteException implements Exception {
   String toString() => _message ?? 'Badly formed route';
 }
 
+class UnknownRoute implements Exception {
+  final String? _message;
+
+  UnknownRoute([this._message]);
+
+  @override
+  String toString() => _message ?? 'Unknown route';
+}
+
+abstract class Hook {
+  String? onDispatch(Request request, Route matchedRoute) {}
+
+  void onResponse(Request request, Response response) {}
+}
+
 class Router {
   // TODO: should be a tree based on path segments
   final Map<Route, RouteCall> _registry = {};
+  final Set<Hook> _hooks = {};
 
   static final RegExp routeArgPattern = RegExp('{([a-zA-Z0-9_]+)}');
 
@@ -78,12 +94,36 @@ class Router {
           },
         );
 
-        return entry.value(request, parameters);
+        Response? response;
+
+        for (Hook hook in _hooks) {
+          String? redirect = hook.onDispatch(request, entry.key);
+
+          if (redirect != null) {
+            if (_registry[redirect] != null) {
+              response = _registry[redirect]!(parameters);
+            } else {
+              throw UnknownRoute('Unknown route `$redirect`');
+            }
+          }
+        }
+
+        response = response ?? entry.value(parameters);
+
+        for (Hook hook in _hooks) {
+          hook.onResponse(request, response);
+        }
+
+        return response;
       }
     }
 
     // 404
     return Response('Route not found', 404);
+  }
+
+  void registerHook(Hook hook) {
+    _hooks.add(hook);
   }
 
   void register(dynamic controller) {
@@ -139,7 +179,7 @@ class Router {
   void _registerRoute(InstanceMirror controller, MethodMirror method, Route route) {
     // Register a function that will inject parameters as method arguments
     // We don't check here if parameters are matching the method arguments, this is done at register time
-    _registry[route] = (final Request request, final Map<String, dynamic> parameters) => controller.invoke(
+    _registry[route] = (final Map<String, dynamic> parameters) => controller.invoke(
           method.simpleName,
           <dynamic>[],
           <Symbol, dynamic>{

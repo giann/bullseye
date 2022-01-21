@@ -1,4 +1,4 @@
-# bullseye
+# 🎯 bullseye
 
 A dart server-side web framework. **IN DEVELOPMENT**.
 

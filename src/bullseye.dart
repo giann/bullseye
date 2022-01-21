@@ -79,8 +79,24 @@ class MyController {
       );
 }
 
+class LoggingHook extends Hook {
+  @override
+  String? onDispatch(Request request, Route matchedRoute) {
+    print("Matched [${request.method.toUpperCase()}] ${matchedRoute.name}");
+
+    return null;
+  }
+
+  @override
+  void onResponse(Request request, Response response) {
+    print("Will respond:\n${response.body.substring(0, 150)}...");
+  }
+}
+
 void main() async {
-  final Router router = Router()..register(MyController());
+  final Router router = Router()
+    ..register(MyController())
+    ..registerHook(LoggingHook());
 
   Server(router: router).run();
 }
