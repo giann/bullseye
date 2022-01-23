@@ -52,7 +52,7 @@ class ElementNode extends Node {
     if (children.isEmpty) {
       rendered += '/>';
     } else {
-      rendered += rendered.trimRight() + '>';
+      rendered = rendered.trimRight() + '>';
 
       for (Node child in children) {
         rendered += child.render();
@@ -67,7 +67,7 @@ class ElementNode extends Node {
 
 ElementNode form({
   String? action,
-  String? method,
+  String? method = 'post',
   Set<NodeAttribute> attributes = const {},
   List<Node> children = const [],
 }) {
@@ -101,7 +101,7 @@ ElementNode label({
 }
 
 ElementNode input({
-  String? type,
+  String? type = 'text',
   String? id,
   String? name,
   Set<NodeAttribute> attributes = const {},

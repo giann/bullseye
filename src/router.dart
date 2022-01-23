@@ -1,5 +1,6 @@
-import 'package:http/http.dart';
 import 'dart:mirrors';
+
+import 'server.dart';
 
 class Route {
   final String name;
@@ -119,7 +120,7 @@ class Router {
     }
 
     // 404
-    return Response('Route not found', 404);
+    return Response.html('Route not found', statusCode: 404);
   }
 
   void registerHook(Hook hook) {

@@ -1,4 +1,4 @@
-import 'package:http/http.dart';
+import 'dart:math';
 
 import 'dom.dart';
 import 'router.dart';
@@ -17,14 +17,12 @@ class MyForm extends Template {
           ),
           form(
             action: '/hello',
-            method: 'post',
             children: [
               label(
                 $for: 'name',
                 children: [text('What\'s your name?')],
               ),
               input(
-                type: 'text',
                 id: 'name',
                 name: 'name',
               )
@@ -57,25 +55,17 @@ class MyController {
     path: '/hello',
     methods: {'GET'},
   )
-  Response hello({required Request request}) => Response(
-        MyForm().render(),
-        200,
-        headers: <String, String>{
-          'content-type': 'text/html; charset=utf-8',
-        },
-      );
+  Response hello({required Request request}) => Response.html(MyForm().render());
 
   @Route(
     name: 'hello.answer',
     path: '/hello',
     methods: {'POST'},
   )
-  Response answer({required Request request}) => Response(
-        MyView(request.bodyFields['name'] ?? 'Unknown').render(),
-        200,
-        headers: <String, String>{
-          'content-type': 'text/html; charset=utf-8',
-        },
+  Response answer({required Request request}) => Response.html(
+        MyView(
+          request.bodyFields['name'] ?? 'Unknown',
+        ).render(),
       );
 }
 
@@ -89,7 +79,7 @@ class LoggingHook extends Hook {
 
   @override
   void onResponse(Request request, Response response) {
-    print("Will respond:\n${response.body.substring(0, 150)}...");
+    print("Will respond:\n${response.body.substring(0, min(150, response.body.length))}...");
   }
 }
 
