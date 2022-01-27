@@ -185,15 +185,15 @@ ElementNode ul({Set<NodeAttribute> attributes = const {}, List<Node> children = 
     ElementNode('ul', attributes: attributes, children: children);
 ElementNode video({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
     ElementNode('video', attributes: attributes, children: children);
-ElementNode h1({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+ElementNode h1({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
     ElementNode('h1', attributes: attributes, children: children);
-ElementNode h2({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+ElementNode h2({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
     ElementNode('h2', attributes: attributes, children: children);
-ElementNode h3({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+ElementNode h3({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
     ElementNode('h3', attributes: attributes, children: children);
-ElementNode h4({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+ElementNode h4({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
     ElementNode('h4', attributes: attributes, children: children);
-ElementNode h5({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+ElementNode h5({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
     ElementNode('h5', attributes: attributes, children: children);
-ElementNode h6({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+ElementNode h6({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
     ElementNode('h6', attributes: attributes, children: children);

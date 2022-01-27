@@ -1,59 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:darty_json/darty_json.dart';
 import 'package:http/http.dart' as http;
 
 import 'router.dart';
-
-class Request {
-  final http.Request _raw;
-
-  Request(this._raw);
-
-  Uri get url => _raw.url;
-  String get method => _raw.method;
-  Map<String, String> get bodyFields => _raw.bodyFields;
-}
-
-class Response {
-  String body;
-  int statusCode;
-  Map<String, String> headers;
-
-  Response.json(
-    Json data, {
-    this.statusCode = 200,
-    Map<String, String> headers = const {},
-  })  : body = data.toString(),
-        headers = {}..addAll(
-            {
-              ...headers,
-              ...{'content-type': 'application/json'}
-            },
-          );
-
-  Response.html(
-    String html, {
-    this.statusCode = 200,
-    Map<String, String> headers = const {},
-  })  : body = html,
-        headers = {}..addAll(
-            {
-              ...headers,
-              ...{'content-type': 'text/html; charset=utf-8'}
-            },
-          );
-
-  void apply(HttpResponse target) {
-    target.statusCode = statusCode;
-    headers.forEach(
-      (key, value) => target.headers.set(key, value),
-    );
-
-    target.write(body);
-  }
-}
+import 'http.dart';
 
 class Server {
   Router router;

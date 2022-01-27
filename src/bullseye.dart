@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'dom.dart';
 import 'router.dart';
+import 'http.dart';
 import 'server.dart';
 import 'template.dart';
 
@@ -62,9 +63,33 @@ class MyController {
     path: '/hello',
     methods: {'POST'},
   )
-  Response answer({required Request request}) => Response.html(
-        MyView(
-          request.bodyFields['name'] ?? 'Unknown',
+  Response answer({
+    required Router router,
+    required Request request,
+  }) {
+    String name = request.bodyFields['name'] ?? 'Unknown';
+
+    if (name == "bye") {
+      return router.redirectToRoute('bye');
+    }
+
+    return Response.html(
+      MyView(
+        request.bodyFields['name'] ?? 'Unknown',
+      ).render(),
+    );
+  }
+
+  @Route(
+    name: 'bye',
+    path: '/bye',
+    methods: {'GET'},
+  )
+  Response bye({required Request request}) => Response.html(
+        h1(
+          children: [
+            text('Goodbye'),
+          ],
         ).render(),
       );
 }

@@ -1,6 +1,6 @@
 import 'dart:mirrors';
 
-import 'server.dart';
+import 'http.dart';
 
 class Route {
   final String name;
@@ -52,6 +52,7 @@ abstract class Hook {
 class Router {
   // TODO: should be a tree based on path segments
   final Map<Route, RouteCall> _registry = {};
+  final Map<String, Route> _routes = {};
   final Set<Hook> _hooks = {};
 
   static final RegExp routeArgPattern = RegExp('{([a-zA-Z0-9_]+)}');
@@ -92,6 +93,7 @@ class Router {
         parameters.addAll(
           <String, dynamic>{
             'request': request,
+            'router': this,
           },
         );
 
@@ -188,5 +190,17 @@ class Router {
               parameter.simpleName: parameters[MirrorSystem.getName(parameter.simpleName)],
           },
         ).reflectee as Response;
+
+    _routes[route.name] = route;
+  }
+
+  Response redirectToRoute(String name) {
+    Route? destination = _routes[name];
+
+    if (destination != null) {
+      return Response.redirect(destination.path);
+    } else {
+      throw ArgumentError('Route `$name` does not exists');
+    }
   }
 }

@@ -3,10 +3,10 @@
 A dart server-side web framework. **IN DEVELOPMENT**.
 
 # Goals
-- Simple
 - Leverage Dart's type system 
 - Logic should be in code and not in config files
 - Leverage AOT Dart compilation to outperform a script-based equivalent (php, python, etc.)
+- Everything in dart (templates included)
 
 # Features
 - [ ] Templating
