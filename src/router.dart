@@ -1,7 +1,11 @@
 import 'dart:mirrors';
 
-import 'http.dart';
+import 'package:meta/meta.dart';
 
+import 'http.dart';
+import 'utils.dart';
+
+@immutable
 class Route {
   final String name;
   final String path;
@@ -23,8 +27,15 @@ class Route {
   int get hashCode => name.hashCode;
 }
 
-typedef RouteCall = Response Function(Map<String, dynamic>);
+@immutable
+class RouteCall {
+  final Route route;
+  final Response Function(Map<String, dynamic>) call;
 
+  RouteCall({required this.route, required this.call});
+}
+
+@immutable
 class BadlyFormedRouteException implements Exception {
   final String? _message;
 
@@ -34,6 +45,7 @@ class BadlyFormedRouteException implements Exception {
   String toString() => _message ?? 'Badly formed route';
 }
 
+@immutable
 class UnknownRoute implements Exception {
   final String? _message;
 
@@ -49,85 +61,69 @@ abstract class Hook {
   void onResponse(Request request, Response response) {}
 }
 
+@immutable
 class Router {
-  // TODO: should be a tree based on path segments
-  final Map<Route, RouteCall> _registry = {};
   final Map<String, Route> _routes = {};
+  final SegmentMap<RouteCall> _registry;
   final Set<Hook> _hooks = {};
 
   static final RegExp routeArgPattern = RegExp('{([a-zA-Z0-9_]+)}');
+
+  Router() : _registry = SegmentMap<RouteCall>();
 
   Response route(Request request) {
     String method = request.method;
     List<String> path = request.url.pathSegments;
 
     // Search for a matching route
-    for (MapEntry<Route, RouteCall> entry in _registry.entries) {
-      if (!entry.key.methods.contains(method.toUpperCase())) {
-        continue;
-      }
+    RouteCall? call = _registry['$method/${path.join('/')}'];
+    if (call != null) {
+      Map<String, dynamic> parameters = <String, dynamic>{};
 
-      List<String> routeSegments = entry.key.path.substring(1).split('/');
-
-      bool matches = true;
-      for (int i = 0; i < routeSegments.length; i++) {
-        if (path[i] != routeSegments[i] && routeArgPattern.allMatches(routeSegments[i]).length != 1) {
-          matches = false;
-          break;
+      // Extract route parameters
+      for (int i = 0; i < path.length; i++) {
+        if (routeArgPattern.allMatches(path[i]).length == 1) {
+          // TODO: convert value to expected type (could be String, int or double)
+          parameters[routeArgPattern.firstMatch(path[i])!.group(1)!] = path[i];
         }
       }
 
-      // We matched!
-      if (matches) {
-        Map<String, dynamic> parameters = <String, dynamic>{};
+      // We do that here so a parameter named 'request' does not shadow the [Request] argument
+      parameters.addAll(
+        <String, dynamic>{
+          'request': request,
+          'router': this,
+        },
+      );
 
-        // Extract route parameters
-        for (int i = 0; i < routeSegments.length; i++) {
-          if (routeArgPattern.allMatches(routeSegments[i]).length == 1) {
-            // TODO: convert value to expected type (could be String, int or double)
-            parameters[routeArgPattern.firstMatch(routeSegments[i])!.group(1)!] = path[i];
+      Response? response;
+
+      for (Hook hook in _hooks) {
+        String? redirect = hook.onDispatch(request, call.route);
+
+        if (redirect != null) {
+          if (_registry[redirect] != null) {
+            response = _registry[redirect]!.call(parameters);
+          } else {
+            throw UnknownRoute('Unknown route `$redirect`');
           }
         }
-
-        // We do that here so a parameter named 'request' does not shadow the [Request] argument
-        parameters.addAll(
-          <String, dynamic>{
-            'request': request,
-            'router': this,
-          },
-        );
-
-        Response? response;
-
-        for (Hook hook in _hooks) {
-          String? redirect = hook.onDispatch(request, entry.key);
-
-          if (redirect != null) {
-            if (_registry[redirect] != null) {
-              response = _registry[redirect]!(parameters);
-            } else {
-              throw UnknownRoute('Unknown route `$redirect`');
-            }
-          }
-        }
-
-        response = response ?? entry.value(parameters);
-
-        for (Hook hook in _hooks) {
-          hook.onResponse(request, response);
-        }
-
-        return response;
       }
+
+      response = response ?? call.call(parameters);
+
+      for (Hook hook in _hooks) {
+        hook.onResponse(request, response);
+      }
+
+      return response;
     }
 
     // 404
     return Response.html('Route not found', statusCode: 404);
   }
 
-  void registerHook(Hook hook) {
-    _hooks.add(hook);
-  }
+  void registerHook(Hook hook) => _hooks.add(hook);
 
   void register(dynamic controller) {
     InstanceMirror instanceMirror = reflect(controller);
@@ -182,16 +178,23 @@ class Router {
   void _registerRoute(InstanceMirror controller, MethodMirror method, Route route) {
     // Register a function that will inject parameters as method arguments
     // We don't check here if parameters are matching the method arguments, this is done at register time
-    _registry[route] = (final Map<String, dynamic> parameters) => controller.invoke(
+    for (String httpMethod in route.methods) {
+      _registry['$httpMethod${route.path}'] = RouteCall(
+        route: route,
+        call: (final Map<String, dynamic> parameters) => controller.invoke(
           method.simpleName,
           <dynamic>[],
           <Symbol, dynamic>{
             for (ParameterMirror parameter in method.parameters)
               parameter.simpleName: parameters[MirrorSystem.getName(parameter.simpleName)],
           },
-        ).reflectee as Response;
+        ).reflectee as Response,
+      );
+    }
 
     _routes[route.name] = route;
+
+    print("Route `${route.name}` registered as ${route.path}");
   }
 
   Response redirectToRoute(String name) {
