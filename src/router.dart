@@ -3,7 +3,6 @@ import 'dart:mirrors';
 import 'package:meta/meta.dart';
 
 import 'http.dart';
-import 'utils.dart';
 
 @immutable
 class Route {
@@ -64,59 +63,74 @@ abstract class Hook {
 @immutable
 class Router {
   final Map<String, Route> _routes = {};
-  final SegmentMap<RouteCall> _registry;
+  final Map<Route, RouteCall> _registry = {};
   final Set<Hook> _hooks = {};
 
   static final RegExp routeArgPattern = RegExp('{([a-zA-Z0-9_]+)}');
-
-  Router() : _registry = SegmentMap<RouteCall>();
 
   Response route(Request request) {
     String method = request.method;
     List<String> path = request.url.pathSegments;
 
     // Search for a matching route
-    RouteCall? call = _registry['$method/${path.join('/')}'];
-    if (call != null) {
-      Map<String, dynamic> parameters = <String, dynamic>{};
+    for (MapEntry<Route, RouteCall> entry in _registry.entries) {
+      if (!entry.key.methods.contains(method.toUpperCase())) {
+        continue;
+      }
 
-      // Extract route parameters
-      for (int i = 0; i < path.length; i++) {
-        if (routeArgPattern.allMatches(path[i]).length == 1) {
-          // TODO: convert value to expected type (could be String, int or double)
-          parameters[routeArgPattern.firstMatch(path[i])!.group(1)!] = path[i];
+      List<String> routeSegments = entry.key.path.substring(1).split('/');
+
+      bool matches = true;
+      for (int i = 0; i < routeSegments.length; i++) {
+        if (i >= path.length ||
+            (path[i] != routeSegments[i] && routeArgPattern.allMatches(routeSegments[i]).length != 1)) {
+          matches = false;
+          break;
         }
       }
 
-      // We do that here so a parameter named 'request' does not shadow the [Request] argument
-      parameters.addAll(
-        <String, dynamic>{
-          'request': request,
-          'router': this,
-        },
-      );
+      // We matched!
+      if (matches) {
+        Map<String, dynamic> parameters = <String, dynamic>{};
 
-      Response? response;
-
-      for (Hook hook in _hooks) {
-        String? redirect = hook.onDispatch(request, call.route);
-
-        if (redirect != null) {
-          if (_registry[redirect] != null) {
-            response = _registry[redirect]!.call(parameters);
-          } else {
-            throw UnknownRoute('Unknown route `$redirect`');
+        // Extract route parameters
+        for (int i = 0; i < routeSegments.length; i++) {
+          if (routeArgPattern.allMatches(routeSegments[i]).length == 1) {
+            // TODO: convert value to expected type (could be String, int or double)
+            parameters[routeArgPattern.firstMatch(routeSegments[i])!.group(1)!] = path[i];
           }
         }
+
+        // We do that here so a parameter named 'request' does not shadow the [Request] argument
+        parameters.addAll(
+          <String, dynamic>{
+            'request': request,
+            'router': this,
+          },
+        );
+
+        Response? response;
+
+        for (Hook hook in _hooks) {
+          String? redirect = hook.onDispatch(request, entry.key);
+
+          if (redirect != null) {
+            if (_registry[redirect] != null) {
+              response = _registry[redirect]!.call(parameters);
+            } else {
+              throw UnknownRoute('Unknown route `$redirect`');
+            }
+          }
+        }
+
+        response = response ?? entry.value.call(parameters);
+
+        for (Hook hook in _hooks) {
+          hook.onResponse(request, response);
+        }
+
+        return response;
       }
-
-      response = response ?? call.call(parameters);
-
-      for (Hook hook in _hooks) {
-        hook.onResponse(request, response);
-      }
-
-      return response;
     }
 
     // 404
@@ -178,19 +192,17 @@ class Router {
   void _registerRoute(InstanceMirror controller, MethodMirror method, Route route) {
     // Register a function that will inject parameters as method arguments
     // We don't check here if parameters are matching the method arguments, this is done at register time
-    for (String httpMethod in route.methods) {
-      _registry['$httpMethod${route.path}'] = RouteCall(
-        route: route,
-        call: (final Map<String, dynamic> parameters) => controller.invoke(
-          method.simpleName,
-          <dynamic>[],
-          <Symbol, dynamic>{
-            for (ParameterMirror parameter in method.parameters)
-              parameter.simpleName: parameters[MirrorSystem.getName(parameter.simpleName)],
-          },
-        ).reflectee as Response,
-      );
-    }
+    _registry[route] = RouteCall(
+      route: route,
+      call: (final Map<String, dynamic> parameters) => controller.invoke(
+        method.simpleName,
+        <dynamic>[],
+        <Symbol, dynamic>{
+          for (ParameterMirror parameter in method.parameters)
+            parameter.simpleName: parameters[MirrorSystem.getName(parameter.simpleName)],
+        },
+      ).reflectee as Response,
+    );
 
     _routes[route.name] = route;
 

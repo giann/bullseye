@@ -92,6 +92,19 @@ class MyController {
           ],
         ).render(),
       );
+
+  @Route(
+    name: 'login',
+    path: '/login/{id}',
+    methods: {'GET'},
+  )
+  Response login({required Request request, required String id}) => Response.html(
+        h1(
+          children: [
+            text('You\'re logged in $id!'),
+          ],
+        ).render(),
+      );
 }
 
 class LoggingHook extends Hook {

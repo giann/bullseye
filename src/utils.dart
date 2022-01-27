@@ -5,6 +5,8 @@ class SegmentMap<T> {
   final String root;
   T? value;
   Map<String, SegmentMap<T>> map = {};
+  // TODO
+  // final bool canVary = false;
 
   SegmentMap({
     this.root = '/',
