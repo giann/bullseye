@@ -1,39 +1,31 @@
+import 'dart:collection';
 import 'dart:math';
 
 import 'dom.dart';
+import 'form.dart';
 import 'router.dart';
 import 'http.dart';
 import 'server.dart';
 import 'template.dart';
 
-class MyForm extends Template {
+class MyForm implements Template {
+  Form myForm;
+
+  MyForm(this.myForm);
+
   @override
   String render() => div(
         attributes: <NodeAttribute>{
           attr('class', 'yolo'),
         },
         children: [
-          h1(
-            children: [text('Hello there!')],
-          ),
-          form(
-            action: '/hello',
-            children: [
-              label(
-                $for: 'name',
-                children: [text('What\'s your name?')],
-              ),
-              input(
-                id: 'name',
-                name: 'name',
-              )
-            ],
-          )
+          h1('Hello there!'),
+          myForm.build(),
         ],
       ).render();
 }
 
-class MyView extends Template {
+class MyView implements Template {
   String name;
 
   MyView(this.name);
@@ -41,42 +33,51 @@ class MyView extends Template {
   @override
   String render() => div(
         children: [
-          h1(
-            children: [
-              text('Hello $name'),
-            ],
-          ),
+          h1('Hello $name'),
         ],
       ).render();
 }
 
 class MyController {
+  Form myForm = Form(
+    name: 'greetings',
+    action: '/hello',
+    fields: LinkedHashMap<String, Field>.from(
+      <String, Field>{
+        'name': TextField(
+          name: 'name',
+          label: 'Wath\'s your name',
+          validators: [
+            Validator<String>.minLength(5),
+            Validator<String>.required(),
+          ],
+        ),
+      },
+    ),
+  );
+
   @Route(
     name: 'hello',
     path: '/hello',
-    methods: {'GET'},
+    methods: {'GET', 'POST'},
   )
-  Response hello({required Request request}) => Response.html(MyForm().render());
+  Response hello({required Router router, required Request request}) {
+    myForm.populate(request);
 
-  @Route(
-    name: 'hello.answer',
-    path: '/hello',
-    methods: {'POST'},
-  )
-  Response answer({
-    required Router router,
-    required Request request,
-  }) {
-    String name = request.bodyFields['name'] ?? 'Unknown';
+    if (request.method == 'POST' && myForm.isValid) {
+      String name = myForm['name']?.value as String? ?? 'Unknown';
 
-    if (name == "bye") {
-      return router.redirectToRoute('bye');
+      if (name == "bye") {
+        return router.redirectToRoute('bye');
+      }
+
+      return Response.html(
+        MyView(name).render(),
+      );
     }
 
     return Response.html(
-      MyView(
-        request.bodyFields['name'] ?? 'Unknown',
-      ).render(),
+      MyForm(myForm).render(),
     );
   }
 
@@ -86,11 +87,7 @@ class MyController {
     methods: {'GET'},
   )
   Response bye({required Request request}) => Response.html(
-        h1(
-          children: [
-            text('Goodbye'),
-          ],
-        ).render(),
+        h1('Goodbye').render(),
       );
 
   @Route(
@@ -99,11 +96,7 @@ class MyController {
     methods: {'GET'},
   )
   Response login({required Request request, required String id}) => Response.html(
-        h1(
-          children: [
-            text('You\'re logged in $id!'),
-          ],
-        ).render(),
+        h1('You\'re logged in $id!').render(),
       );
 }
 

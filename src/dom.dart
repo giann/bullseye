@@ -1,4 +1,6 @@
-class NodeAttribute {
+import 'template.dart';
+
+class NodeAttribute implements Template {
   final String key;
   final String value;
 
@@ -7,14 +9,16 @@ class NodeAttribute {
     required this.value,
   });
 
+  @override
   String render() => '$key="$value" ';
 }
 
 NodeAttribute attr(String key, String value) => NodeAttribute(key: key, value: value);
 
-abstract class Node {
+abstract class Node implements Template {
   const Node();
 
+  @override
   String render();
 }
 
@@ -88,16 +92,24 @@ ElementNode form({
 
 ElementNode label({
   String? $for,
+  required String label,
   Set<NodeAttribute> attributes = const {},
   List<Node> children = const [],
 }) {
   if ($for != null) {
     attributes = <NodeAttribute>{}
       ..addAll(attributes)
-      ..add(NodeAttribute(key: 'for', value: $for));
+      ..add(attr('for', $for));
   }
 
-  return ElementNode('label', attributes: attributes, children: children);
+  return ElementNode(
+    'label',
+    attributes: attributes,
+    children: [
+      text(label),
+      ...children,
+    ],
+  );
 }
 
 ElementNode input({
@@ -185,15 +197,15 @@ ElementNode ul({Set<NodeAttribute> attributes = const {}, List<Node> children = 
     ElementNode('ul', attributes: attributes, children: children);
 ElementNode video({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
     ElementNode('video', attributes: attributes, children: children);
-ElementNode h1({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
-    ElementNode('h1', attributes: attributes, children: children);
-ElementNode h2({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
-    ElementNode('h2', attributes: attributes, children: children);
-ElementNode h3({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
-    ElementNode('h3', attributes: attributes, children: children);
-ElementNode h4({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
-    ElementNode('h4', attributes: attributes, children: children);
-ElementNode h5({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
-    ElementNode('h5', attributes: attributes, children: children);
-ElementNode h6({Set<NodeAttribute> attributes = const {}, required List<Node> children}) =>
-    ElementNode('h6', attributes: attributes, children: children);
+ElementNode h1(String title, {Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h1', attributes: attributes, children: [text(title), ...children]);
+ElementNode h2(String title, {Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h2', attributes: attributes, children: [text(title), ...children]);
+ElementNode h3(String title, {Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h3', attributes: attributes, children: [text(title), ...children]);
+ElementNode h4(String title, {Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h4', attributes: attributes, children: [text(title), ...children]);
+ElementNode h5(String title, {Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h5', attributes: attributes, children: [text(title), ...children]);
+ElementNode h6(String title, {Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
+    ElementNode('h6', attributes: attributes, children: [text(title), ...children]);

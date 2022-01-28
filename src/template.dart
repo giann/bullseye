@@ -1,3 +1,3 @@
-abstract class Template {
+mixin Template {
   String render();
 }
