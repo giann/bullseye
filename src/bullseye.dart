@@ -61,7 +61,10 @@ class MyController {
     path: '/hello',
     methods: {'GET', 'POST'},
   )
-  Response hello({required Router router, required Request request}) {
+  Response hello({
+    required Router router,
+    required Request request,
+  }) {
     myForm.populate(request);
 
     if (request.method == 'POST' && myForm.isValid) {
@@ -95,7 +98,11 @@ class MyController {
     path: '/login/{id}',
     methods: {'GET'},
   )
-  Response login({required Request request, required String id}) => Response.html(
+  Response login({
+    required Request request,
+    required String id,
+  }) =>
+      Response.html(
         h1('You\'re logged in $id!').render(),
       );
 }

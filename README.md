@@ -7,20 +7,18 @@ A dart server-side web framework. **IN DEVELOPMENT**.
 - Logic should be in code and not in config files
 - Leverage AOT Dart compilation to outperform a script-based equivalent (php, python, etc.)
 - Everything in dart (templates included)
+- Use [dart's annotations](https://api.flutter.dev/flutter/meta/meta-library.html) when revelant
 
 # Features
-- [ ] Templating
-- [ ] Routing
-- [ ] Auth
+- [X] Templating
+- [X] Routing
+- [ ] Session/Auth
 - [ ] Profiler
 - [ ] Transactions abstraction over any outside resource access (db, other api, etc.)
 - [ ] Assets managment
 - [ ] Logging & Metrics
-- [ ] HTTP2-3
 - [ ] Cache
-- [ ] Use [dart's annotations](https://api.flutter.dev/flutter/meta/meta-library.html)
 - [ ] REST support with actual abstraction for resources etc.
-- [ ] Session
 - [ ] ORM
 
 # Maybe
