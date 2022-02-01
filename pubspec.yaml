@@ -10,6 +10,7 @@ dependencies:
   darty_json: ^1.0.0
   http: ^0.13.4
   args: ^2.3.0
+  mysql1: ^0.19.2
 
 dev_dependencies:
   lints: ^1.0.0
