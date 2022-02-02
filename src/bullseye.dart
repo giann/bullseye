@@ -123,7 +123,7 @@ class LoggingHook extends Hook with Logged {
 }
 
 void main() async {
-  final LoggerService loggerService = LoggerService()..init();
+  LoggerService().init();
 
   final Router router = Router()
     ..register(MyController())

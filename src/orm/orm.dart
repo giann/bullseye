@@ -1,8 +1,7 @@
-import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:mysql1/mysql1.dart';
 
-import 'logger.dart';
+import '../logger.dart';
 
 @immutable
 class NotConnectedException implements Exception {
@@ -98,35 +97,4 @@ class Orm with Logged {
       params,
     );
   }
-}
-
-void main() async {
-  final LoggerService loggerService = LoggerService()..init();
-  final Logger logger = loggerService.general;
-
-  Orm o = Orm(ConnectionSettings(
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: 'test',
-    db: 'test',
-  ));
-
-  await o.connect();
-
-  // await o.insert(
-  //   'person',
-  //   <String, Object>{
-  //     'firstname': 'Benoit',
-  //     'lastname': 'Giannangeli',
-  //     'age': 36,
-  //   },
-  // ).execute();
-
-  Results results = await o.select('* from person').execute();
-  for (ResultRow result in results) {
-    logger.warning(result.fields.values.join(', '));
-  }
-
-  o.close();
 }
