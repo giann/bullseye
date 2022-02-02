@@ -2,6 +2,7 @@ name: bullseye
 description: A dart web framework
 version: 0.0.1
 homepage: https://github.com/giann/bullseye
+publish_to: none
 
 environment:
   sdk: ">=2.14.0 <3.0.0"
@@ -10,7 +11,8 @@ dependencies:
   darty_json: ^1.0.0
   http: ^0.13.4
   args: ^2.3.0
-  mysql1: ^0.19.2
+  mysql1:
+    git: git@github.com:giann/mysql1_dart.git
 
 dev_dependencies:
   lints: ^1.0.0

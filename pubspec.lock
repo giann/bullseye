@@ -81,9 +81,11 @@ packages:
   mysql1:
     dependency: "direct main"
     description:
-      name: mysql1
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "."
+      ref: HEAD
+      resolved-ref: "0d0fd99657ce3fd8e8bfcc7df8bf94684dcd48f0"
+      url: "git@github.com:giann/mysql1_dart.git"
+    source: git
     version: "0.19.2"
   path:
     dependency: transitive
