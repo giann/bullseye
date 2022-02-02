@@ -11,6 +11,8 @@ dependencies:
   darty_json: ^1.0.0
   http: ^0.13.4
   args: ^2.3.0
+  logging: ^1.0.2
+  ansicolor: ^2.0.1
   mysql1:
     git: git@github.com:giann/mysql1_dart.git
 

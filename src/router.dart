@@ -3,6 +3,7 @@ import 'dart:mirrors';
 import 'package:meta/meta.dart';
 
 import 'http.dart';
+import 'logger.dart';
 
 @immutable
 class Route {
@@ -60,8 +61,7 @@ abstract class Hook {
   void onResponse(Request request, Response response) {}
 }
 
-@immutable
-class Router {
+class Router with Logged {
   final Map<String, Route> _routes = {};
   final Map<Route, RouteCall> _registry = {};
   final Set<Hook> _hooks = {};
@@ -206,7 +206,7 @@ class Router {
 
     _routes[route.name] = route;
 
-    print("Route `${route.name}` registered as ${route.path}");
+    logger.config("Route `${route.name}` registered as ${route.path}");
   }
 
   Response redirectToRoute(String name) {

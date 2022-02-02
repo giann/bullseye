@@ -3,10 +3,11 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import 'logger.dart';
 import 'router.dart';
 import 'http.dart';
 
-class Server {
+class Server with Logged {
   Router router;
 
   Server({required this.router});
@@ -14,10 +15,10 @@ class Server {
   void run() async {
     HttpServer server = await HttpServer.bind(InternetAddress.anyIPv6, 8080);
 
-    print("Listening on :8080...");
+    logger.info("Listening on :8080...");
 
     await server.forEach((HttpRequest httpRequest) async {
-      print("Received [${httpRequest.method.toUpperCase()}] ${httpRequest.uri.toString()}");
+      logger.info("Received [${httpRequest.method.toUpperCase()}] ${httpRequest.uri.toString()}");
 
       http.Request request = await _httpToIoRequest(httpRequest);
 

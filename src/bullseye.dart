@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'dom.dart';
 import 'form.dart';
+import 'logger.dart';
 import 'router.dart';
 import 'http.dart';
 import 'server.dart';
@@ -107,21 +108,23 @@ class MyController {
       );
 }
 
-class LoggingHook extends Hook {
+class LoggingHook extends Hook with Logged {
   @override
   String? onDispatch(Request request, Route matchedRoute) {
-    print("Matched [${request.method.toUpperCase()}] ${matchedRoute.name}");
+    logger.info("Matched [${request.method.toUpperCase()}] ${matchedRoute.name}");
 
     return null;
   }
 
   @override
   void onResponse(Request request, Response response) {
-    print("Will respond:\n${response.body.substring(0, min(150, response.body.length))}...");
+    logger.info("Will respond:\n${response.body.substring(0, min(150, response.body.length))}...");
   }
 }
 
 void main() async {
+  final LoggerService loggerService = LoggerService()..init();
+
   final Router router = Router()
     ..register(MyController())
     ..registerHook(LoggingHook());

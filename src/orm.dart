@@ -1,5 +1,8 @@
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:mysql1/mysql1.dart';
+
+import 'logger.dart';
 
 @immutable
 class NotConnectedException implements Exception {
@@ -22,7 +25,7 @@ class Query {
   Future<Results> execute() async => result = (await _orm.execute(_query, params: _params));
 }
 
-class Orm {
+class Orm with Logged {
   MySqlConnection? _connection;
   final ConnectionSettings _settings;
 
@@ -43,12 +46,13 @@ class Orm {
 
   Future<Results> execute(String query, {List<Object>? params}) async {
     if (_connection == null) {
+      logger.severe('Not connected to database');
       throw NotConnectedException();
     }
 
     Results results = await _connection!.query(query, params);
 
-    print('[SQL] ${results.affectedRows ?? results.length}: `$query`');
+    logger.info('${results.affectedRows ?? results.length}: `$query`');
 
     return results;
   }
@@ -65,7 +69,12 @@ class Orm {
     );
   }
 
-  Query update(String table, Map<String, Object> values, {List<String>? conditions, List<Object>? params}) {
+  Query update(
+    String table,
+    Map<String, Object> values, {
+    List<String>? conditions,
+    List<Object>? params,
+  }) {
     String columns = values.entries.map<String>((entry) => '${entry.key}=?').toList().join(', ');
     String where = conditions != null && conditions.isNotEmpty ? ' WHERE ${conditions.join(' AND ')}' : '';
 
@@ -76,7 +85,11 @@ class Orm {
     );
   }
 
-  Query delete(String table, {List<String>? conditions, List<Object>? params}) {
+  Query delete(
+    String table, {
+    List<String>? conditions,
+    List<Object>? params,
+  }) {
     String where = conditions != null && conditions.isNotEmpty ? ' WHERE ${conditions.join(' AND ')}' : '';
 
     return Query(
@@ -88,6 +101,9 @@ class Orm {
 }
 
 void main() async {
+  final LoggerService loggerService = LoggerService()..init();
+  final Logger logger = loggerService.general;
+
   Orm o = Orm(ConnectionSettings(
     host: 'localhost',
     port: 3306,
@@ -98,18 +114,18 @@ void main() async {
 
   await o.connect();
 
-  await o.insert(
-    'person',
-    <String, Object>{
-      'firstname': 'Benoit',
-      'lastname': 'Giannangeli',
-      'age': 36,
-    },
-  ).execute();
+  // await o.insert(
+  //   'person',
+  //   <String, Object>{
+  //     'firstname': 'Benoit',
+  //     'lastname': 'Giannangeli',
+  //     'age': 36,
+  //   },
+  // ).execute();
 
   Results results = await o.select('* from person').execute();
   for (ResultRow result in results) {
-    print(result.fields.values.join(', '));
+    logger.warning(result.fields.values.join(', '));
   }
 
   o.close();

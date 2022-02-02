@@ -64,15 +64,3 @@ class SegmentMap<T> {
   @override
   String toString() => _toString();
 }
-
-void main() {
-  SegmentMap<String> map = SegmentMap<String>();
-
-  map['GET/hello/world/yolo'] = 'one';
-  map['POST/hello/mundo/yolo'] = 'two';
-  map['GET/bye/joe'] = 'three';
-
-  print(map);
-
-  print(map['POST/hello/mundo/yolo']);
-}
