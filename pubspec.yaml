@@ -14,7 +14,9 @@ dependencies:
   logging: ^1.0.2
   ansicolor: ^2.0.1
   mysql1:
-    git: git@github.com:giann/mysql1_dart.git
+    git:
+      url: git@github.com:giann/mysql1_dart.git
+      ref: no-log
 
 dev_dependencies:
   lints: ^1.0.0

@@ -89,8 +89,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: "0d0fd99657ce3fd8e8bfcc7df8bf94684dcd48f0"
+      ref: no-log
+      resolved-ref: "1bc77f7698044f1cc8975db38eb6bdc16c0e2b90"
       url: "git@github.com:giann/mysql1_dart.git"
     source: git
     version: "0.19.2"

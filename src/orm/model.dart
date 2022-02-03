@@ -43,8 +43,8 @@ class Repository<T> {
     return t.newInstance(constructor, row.values ?? <dynamic>[]).reflectee as T;
   }
 
-  Future<T?> find(dynamic id) async {
-    Results results = await orm.select('* from $table where id = ?', params: [id as Object]).execute();
+  Future<T?> find(String id) async {
+    Results results = await orm.select('* from $table where id = UUID_TO_BIN(?)', params: [id]).execute();
 
     if (results.length == 1) {
       return _produceFrom(results.first);
@@ -54,7 +54,7 @@ class Repository<T> {
 
 @immutable
 abstract class Entity {
-  final int id;
+  final String id;
 
   Entity(this.id);
 }
@@ -64,7 +64,7 @@ class Person extends Entity {
   final String lastname;
   final int age;
 
-  Person(int id, this.firstname, this.lastname, this.age) : super(id);
+  Person(String id, this.firstname, this.lastname, this.age) : super(id);
 }
 
 void main() async {
@@ -83,7 +83,7 @@ void main() async {
 
   await o.connect();
 
-  Person? person = await repository.find('1');
+  Person? person = await repository.find('ca131580-84bf-11ec-a3c1-348e2f3fb1b9');
 
   if (person != null) {
     logger.warning('Hello ${person.firstname} ${person.lastname} you are ${person.age} years old!');
