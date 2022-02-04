@@ -43,8 +43,22 @@ class Repository<T> {
     return t.newInstance(constructor, row.values ?? <dynamic>[]).reflectee as T;
   }
 
-  Future<T?> find(String id) async {
-    Results results = await orm.select('* from $table where id = UUID_TO_BIN(?)', params: [id]).execute();
+  Future<T?> find({
+    String? id,
+    List<String> conditions = const <String>[],
+    List<Object> params = const <Object>[],
+  }) async {
+    if (id == null && conditions.isEmpty) {
+      throw ArgumentError('Provide either `id` or condition(s)');
+    }
+
+    Results results = await orm.select(
+      '* from $table where ${id != null ? 'id = UUID_TO_BIN(?)' : ''} ${id != null && conditions.isNotEmpty ? ' AND ' : ''} ${conditions.join(' AND ')}',
+      params: [
+        if (id != null) id,
+        ...params,
+      ],
+    ).execute();
 
     if (results.length == 1) {
       return _produceFrom(results.first);
@@ -83,7 +97,11 @@ void main() async {
 
   await o.connect();
 
-  Person? person = await repository.find('ca131580-84bf-11ec-a3c1-348e2f3fb1b9');
+  Person? person = await repository.find(
+    id: 'ca131580-84bf-11ec-a3c1-348e2f3fb1b9',
+    conditions: ['firstname = ?'],
+    params: ['Benoit'],
+  );
 
   if (person != null) {
     logger.warning('Hello ${person.firstname} ${person.lastname} you are ${person.age} years old!');
