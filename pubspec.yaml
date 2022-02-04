@@ -13,6 +13,7 @@ dependencies:
   args: ^2.3.0
   logging: ^1.0.2
   ansicolor: ^2.0.1
+  uuid: ^3.0.5
   mysql1:
     git:
       url: git@github.com:giann/mysql1_dart.git

@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
 import 'package:mysql1/mysql1.dart';
+import 'package:uuid/uuid.dart';
 
 import '../logger.dart';
 import 'orm.dart';
@@ -17,7 +18,7 @@ class NoMatchingField implements Exception {
   String toString() => _message ?? 'No matching field';
 }
 
-class Repository<T> {
+class Repository<T extends Entity> {
   final String table;
   final Orm orm;
 
@@ -33,7 +34,7 @@ class Repository<T> {
       DeclarationMirror decl = element.value;
 
       if (decl is MethodMirror) {
-        return decl.isConstructor && MirrorSystem.getName(decl.constructorName) == '';
+        return decl.isConstructor && MirrorSystem.getName(decl.constructorName) == 'withId';
       }
 
       return false;
@@ -43,7 +44,26 @@ class Repository<T> {
     return t.newInstance(constructor, row.values ?? <dynamic>[]).reflectee as T;
   }
 
-  Future<T?> find({
+  Map<String, Object> _instanceToMap(T instance, [Map<String, Object>? values, ClassMirror? superclass]) {
+    values = values ?? {};
+
+    InstanceMirror instanceMirror = reflect(instance);
+    ClassMirror classMirror = superclass ?? instanceMirror.type;
+
+    classMirror.declarations.forEach((Symbol key, DeclarationMirror decl) {
+      if (decl is VariableMirror && !decl.isPrivate) {
+        values![MirrorSystem.getName(decl.simpleName)] = instanceMirror.getField(decl.simpleName).reflectee as Object;
+      }
+    });
+
+    if (classMirror.superclass != null) {
+      return _instanceToMap(instance, values, classMirror.superclass);
+    }
+
+    return values;
+  }
+
+  Future<List<T>> find({
     String? id,
     List<String> conditions = const <String>[],
     List<Object> params = const <Object>[],
@@ -60,17 +80,42 @@ class Repository<T> {
       ],
     ).execute();
 
-    if (results.length == 1) {
-      return _produceFrom(results.first);
-    }
+    return results.map<T>((ResultRow row) => _produceFrom(row)).toList();
   }
+
+  Future<int> delete({
+    T? instance,
+    String? id,
+    List<String> conditions = const <String>[],
+    List<Object> params = const <Object>[],
+  }) async {
+    if (id == null && conditions.isEmpty && instance == null) {
+      throw ArgumentError('Provide either `id` or condition(s)');
+    }
+
+    Results results = await orm.delete(
+      table,
+      conditions: [
+        if (id != null || instance != null) 'id = ?',
+        ...conditions,
+      ],
+      params: [
+        if (id != null || instance != null) id ?? instance?.id ?? '',
+        ...params,
+      ],
+    ).execute();
+
+    return results.affectedRows ?? 0;
+  }
+
+  Future<void> insert(T instance) => orm.insert(table, _instanceToMap(instance)).execute();
 }
 
 @immutable
 abstract class Entity {
   final String id;
 
-  Entity(this.id);
+  Entity([String? id]) : id = id ?? Uuid().v4();
 }
 
 class Person extends Entity {
@@ -78,7 +123,9 @@ class Person extends Entity {
   final String lastname;
   final int age;
 
-  Person(String id, this.firstname, this.lastname, this.age) : super(id);
+  Person(this.firstname, this.lastname, this.age) : super();
+
+  Person.withId(String id, this.firstname, this.lastname, this.age) : super(id);
 }
 
 void main() async {
@@ -97,17 +144,24 @@ void main() async {
 
   await o.connect();
 
-  Person? person = await repository.find(
-    id: 'ca131580-84bf-11ec-a3c1-348e2f3fb1b9',
-    conditions: ['firstname = ?'],
-    params: ['Benoit'],
-  );
+  Person newPerson = Person('Joe', 'Doe', 23);
 
-  if (person != null) {
-    logger.warning('Hello ${person.firstname} ${person.lastname} you are ${person.age} years old!');
+  await repository.insert(newPerson);
+
+  List<Person> persons = (await repository.find(
+    conditions: ['firstname = ?'],
+    params: ['Joe'],
+  ));
+
+  if (persons.isNotEmpty) {
+    logger.warning(
+      'Hello ${persons.first.firstname} ${persons.first.lastname} you are ${persons.first.age} years old!',
+    );
   } else {
     logger.severe('Not found');
   }
+
+  await repository.delete(instance: newPerson);
 
   o.close();
 }
