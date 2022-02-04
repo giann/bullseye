@@ -68,12 +68,12 @@ class Repository<T extends Entity> {
     List<String> conditions = const <String>[],
     List<Object> params = const <Object>[],
   }) async {
-    if (id == null && conditions.isEmpty) {
-      throw ArgumentError('Provide either `id` or condition(s)');
-    }
+    String whereClause = ' where ${id != null ? 'id = UUID_TO_BIN(?)' : ''}'
+        ' ${id != null && conditions.isNotEmpty ? ' AND ' : ''}'
+        ' ${conditions.join(' AND ')}';
 
     Results results = await orm.select(
-      '* from $table where ${id != null ? 'id = UUID_TO_BIN(?)' : ''} ${id != null && conditions.isNotEmpty ? ' AND ' : ''} ${conditions.join(' AND ')}',
+      '* from $table${id != null || conditions.isNotEmpty ? whereClause : ''}',
       params: [
         if (id != null) id,
         ...params,
@@ -89,16 +89,14 @@ class Repository<T extends Entity> {
     List<String> conditions = const <String>[],
     List<Object> params = const <Object>[],
   }) async {
-    if (id == null && conditions.isEmpty && instance == null) {
-      throw ArgumentError('Provide either `id` or condition(s)');
-    }
-
     Results results = await orm.delete(
       table,
-      conditions: [
-        if (id != null || instance != null) 'id = ?',
-        ...conditions,
-      ],
+      conditions: id != null || conditions.isNotEmpty || instance != null
+          ? [
+              if (id != null || instance != null) 'id = ?',
+              ...conditions,
+            ]
+          : null,
       params: [
         if (id != null || instance != null) id ?? instance?.id ?? '',
         ...params,
@@ -148,10 +146,7 @@ void main() async {
 
   await repository.insert(newPerson);
 
-  List<Person> persons = (await repository.find(
-    conditions: ['firstname = ?'],
-    params: ['Joe'],
-  ));
+  List<Person> persons = await repository.find();
 
   if (persons.isNotEmpty) {
     logger.warning(
@@ -161,7 +156,7 @@ void main() async {
     logger.severe('Not found');
   }
 
-  await repository.delete(instance: newPerson);
+  await repository.delete();
 
   o.close();
 }

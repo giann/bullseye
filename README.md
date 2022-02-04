@@ -12,6 +12,7 @@ A dart server-side web framework. **IN DEVELOPMENT**.
 # Features
 - [X] Templating
 - [X] Routing
+- [X] ORM
 - [ ] Session/Auth
 - [ ] Profiler
 - [ ] Transactions abstraction over any outside resource access (db, other api, etc.)
@@ -19,7 +20,6 @@ A dart server-side web framework. **IN DEVELOPMENT**.
 - [ ] Logging & Metrics
 - [ ] Cache
 - [ ] REST support with actual abstraction for resources etc.
-- [ ] ORM
 
 # Maybe
 - [ ] GraphQL/Grafitti-like

@@ -54,7 +54,7 @@ class Orm with Logged {
 
     Results results = await _connection!.query(query, params);
 
-    logger.fine('${results.affectedRows ?? results.length}: `$query`');
+    logger.fine('`$query` -> ${results.affectedRows ?? results.length}');
 
     return results;
   }
