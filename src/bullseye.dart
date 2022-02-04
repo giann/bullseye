@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'dom.dart';
 import 'form.dart';
+import 'injection.dart';
 import 'logger.dart';
 import 'router.dart';
 import 'http.dart';
@@ -65,7 +66,10 @@ class MyController {
   Response hello({
     required Router router,
     required Request request,
+    required LoggerService loggerService,
   }) {
+    loggerService.general.warning('AYA!');
+
     myForm.populate(request);
 
     if (request.method == 'POST' && myForm.isValid) {
@@ -123,11 +127,13 @@ class LoggingHook extends Hook with Logged {
 }
 
 void main() async {
-  LoggerService().init();
+  DependencyRegistry di = DependencyRegistry.current
+    ..put<LoggerService>(LoggerService()..init())
+    ..put<Router>(
+      Router()
+        ..register(MyController())
+        ..registerHook(LoggingHook()),
+    );
 
-  final Router router = Router()
-    ..register(MyController())
-    ..registerHook(LoggingHook());
-
-  Server(router: router).run();
+  Server(router: di.get<Router>()!).run();
 }

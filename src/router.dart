@@ -3,6 +3,7 @@ import 'dart:mirrors';
 import 'package:meta/meta.dart';
 
 import 'http.dart';
+import 'injection.dart';
 import 'logger.dart';
 
 @immutable
@@ -43,6 +44,26 @@ class BadlyFormedRouteException implements Exception {
 
   @override
   String toString() => _message ?? 'Badly formed route';
+}
+
+@immutable
+class BadRouteArgumentType implements Exception {
+  final String? _message;
+
+  BadRouteArgumentType([this._message]);
+
+  @override
+  String toString() => _message ?? 'Route argument is of the wrong type';
+}
+
+@immutable
+class RouteArgumentNotFound implements Exception {
+  final String? _message;
+
+  RouteArgumentNotFound([this._message]);
+
+  @override
+  String toString() => _message ?? 'Route argument not found';
 }
 
 @immutable
@@ -108,6 +129,8 @@ class Router with Logged {
             'router': this,
           },
         );
+
+        // TODO: if matching call has more argument, look into DI system <----
 
         Response? response;
 
@@ -194,14 +217,43 @@ class Router with Logged {
     // We don't check here if parameters are matching the method arguments, this is done at register time
     _registry[route] = RouteCall(
       route: route,
-      call: (final Map<String, dynamic> parameters) => controller.invoke(
-        method.simpleName,
-        <dynamic>[],
-        <Symbol, dynamic>{
-          for (ParameterMirror parameter in method.parameters)
-            parameter.simpleName: parameters[MirrorSystem.getName(parameter.simpleName)],
-        },
-      ).reflectee as Response,
+      call: (final Map<String, dynamic> parameters) {
+        Map<Symbol, dynamic> callParameters = <Symbol, dynamic>{};
+        for (ParameterMirror parameter in method.parameters) {
+          String paramName = MirrorSystem.getName(parameter.simpleName);
+
+          if (parameters.containsKey(paramName)) {
+            if (parameter.type.reflectedType == parameters[paramName].runtimeType) {
+              callParameters[parameter.simpleName] = parameters[paramName];
+            } else {
+              throw BadRouteArgumentType(
+                'Route `$route` argument `$paramName` should be of type `${parameters[paramName.runtimeType]}`, '
+                'expected `${parameter.type.reflectedType}`',
+              );
+            }
+          } else {
+            // Try to get it from DI
+            dynamic dep = DependencyRegistry.current.getRuntime(parameter.type.reflectedType);
+
+            if (dep != null) {
+              callParameters[parameter.simpleName] = dep;
+            } else {
+              throw RouteArgumentNotFound(
+                'Route argument `$paramName` of expected type '
+                '`${parameter.type.reflectedType}` was not found',
+              );
+            }
+          }
+        }
+
+        return controller
+            .invoke(
+              method.simpleName,
+              <dynamic>[],
+              callParameters,
+            )
+            .reflectee as Response;
+      },
     );
 
     _routes[route.name] = route;
