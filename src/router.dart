@@ -130,8 +130,6 @@ class Router with Logged {
           },
         );
 
-        // TODO: if matching call has more argument, look into DI system <----
-
         Response? response;
 
         for (Hook hook in _hooks) {
