@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'http.dart';
 import 'injection.dart';
 import 'logger.dart';
+import 'session.dart';
 
 @immutable
 class Route {
@@ -77,19 +78,21 @@ class UnknownRoute implements Exception {
 }
 
 abstract class Hook {
-  String? onDispatch(Request request, Route matchedRoute) {}
+  Future<String?> onDispatch(Request request, Route matchedRoute);
 
-  void onResponse(Request request, Response response) {}
+  Future<void> onResponse(Request request, Response response);
 }
 
 class Router with Logged {
   final Map<String, Route> _routes = {};
   final Map<Route, RouteCall> _registry = {};
-  final Set<Hook> _hooks = {};
+  final Set<Hook> _hooks = {
+    SessionHook(),
+  };
 
   static final RegExp routeArgPattern = RegExp('{([a-zA-Z0-9_]+)}');
 
-  Response route(Request request) {
+  Future<Response> route(Request request) async {
     String method = request.method;
     List<String> path = request.url.pathSegments;
 
@@ -133,7 +136,7 @@ class Router with Logged {
         Response? response;
 
         for (Hook hook in _hooks) {
-          String? redirect = hook.onDispatch(request, entry.key);
+          String? redirect = await hook.onDispatch(request, entry.key);
 
           if (redirect != null) {
             if (_registry[redirect] != null) {
@@ -147,7 +150,7 @@ class Router with Logged {
         response = response ?? entry.value.call(parameters);
 
         for (Hook hook in _hooks) {
-          hook.onResponse(request, response);
+          await hook.onResponse(request, response);
         }
 
         return response;

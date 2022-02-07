@@ -18,7 +18,7 @@ A dart server-side web framework. **IN DEVELOPMENT**.
 - [ ] Transactions abstraction over any outside resource access (db, other api, etc.)
 - [ ] Assets managment
 - [ ] Logging & Metrics
-- [ ] Cache
+- [ ] [Redis](https://pub.dev/packages/redis)
 - [ ] REST support with actual abstraction for resources etc.
 
 # Maybe

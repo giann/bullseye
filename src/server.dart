@@ -12,19 +12,25 @@ class Server with Logged {
 
   Server({required this.router});
 
-  void run() async {
+  Future<void> run() async {
     HttpServer server = await HttpServer.bind(InternetAddress.anyIPv6, 8080);
 
     logger.info("Listening on :8080...");
 
     await server.forEach((HttpRequest httpRequest) async {
-      logger.info("Received [${httpRequest.method.toUpperCase()}] ${httpRequest.uri.toString()}");
+      try {
+        logger.info("Received [${httpRequest.method.toUpperCase()}] ${httpRequest.uri.toString()}");
 
-      http.Request request = await _httpToIoRequest(httpRequest);
+        http.Request request = await _httpToIoRequest(httpRequest);
 
-      router.route(Request(request)).apply(httpRequest.response);
+        (await router.route(Request(request))).apply(httpRequest.response);
 
-      httpRequest.response.close();
+        httpRequest.response.close();
+      } catch (e) {
+        logger.severe('Error occured while processing request: $e');
+        httpRequest.response.statusCode = 500;
+        httpRequest.response.write('Error occured while processing request: $e');
+      }
     });
   }
 

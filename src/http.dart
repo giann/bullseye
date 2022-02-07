@@ -3,14 +3,22 @@ import 'dart:io';
 import 'package:darty_json/darty_json.dart';
 import 'package:http/http.dart' as http;
 
+import 'session.dart';
+
+class RequestAttributes {
+  Session? session;
+}
+
 class Request {
   final http.Request _raw;
+  final RequestAttributes attributes = RequestAttributes();
 
   Request(this._raw);
 
   Uri get url => _raw.url;
   String get method => _raw.method;
   Map<String, String> get bodyFields => _raw.bodyFields;
+  Map<String, String> get headers => _raw.headers;
 }
 
 class Response {

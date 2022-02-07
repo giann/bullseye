@@ -1,19 +1,25 @@
 import 'dart:collection';
 import 'dart:math';
 
+import 'package:mysql1/mysql1.dart' as mysql;
+
 import 'dom.dart';
+import 'env.dart';
 import 'form.dart';
 import 'injection.dart';
 import 'logger.dart';
+import 'orm/orm.dart';
 import 'router.dart';
 import 'http.dart';
 import 'server.dart';
+import 'session.dart';
 import 'template.dart';
 
 class MyForm implements Template {
   Form myForm;
+  Session? session;
 
-  MyForm(this.myForm);
+  MyForm(this.myForm, this.session);
 
   @override
   String render() => div(
@@ -23,6 +29,12 @@ class MyForm implements Template {
         children: [
           h1('Hello there!'),
           myForm.build(),
+          if (session != null)
+            p(
+              children: [
+                text('User ${session!.id} visited this page ${session!.data['count'].integerValue}'),
+              ],
+            )
         ],
       ).render();
 }
@@ -70,6 +82,10 @@ class MyController {
   }) {
     loggerService.general.warning('AYA!');
 
+    Session? session = request.attributes.session;
+
+    session?.data['count'] = session.data['count'].integerValue + 1;
+
     myForm.populate(request);
 
     if (request.method == 'POST' && myForm.isValid) {
@@ -85,7 +101,7 @@ class MyController {
     }
 
     return Response.html(
-      MyForm(myForm).render(),
+      MyForm(myForm, session).render(),
     );
   }
 
@@ -114,20 +130,34 @@ class MyController {
 
 class LoggingHook extends Hook with Logged {
   @override
-  String? onDispatch(Request request, Route matchedRoute) {
+  Future<String?> onDispatch(Request request, Route matchedRoute) async {
     logger.info("Matched [${request.method.toUpperCase()}] ${matchedRoute.name}");
 
     return null;
   }
 
   @override
-  void onResponse(Request request, Response response) {
+  Future<void> onResponse(Request request, Response response) async {
     logger.info("Will respond:\n${response.body.substring(0, min(150, response.body.length))}...");
   }
 }
 
 void main() async {
+  Orm orm = Orm(mysql.ConnectionSettings(
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: 'test',
+    db: 'test',
+  ));
+
+  await orm.connect();
+
   DependencyRegistry di = DependencyRegistry.current
+    ..put<Env>(Env()..load())
+    // TODO: should probably instanciate an on demand orm connection on a per request basis
+    ..put<Orm>(orm)
+    ..put<SessionStorage>(DatabaseSessionStorage(orm: orm))
     ..put<LoggerService>(LoggerService()..init())
     ..put<Router>(
       Router()
@@ -135,5 +165,7 @@ void main() async {
         ..registerHook(LoggingHook()),
     );
 
-  Server(router: di.get<Router>()!).run();
+  await Server(router: di.get<Router>()!).run();
+
+  orm.close();
 }

@@ -61,12 +61,12 @@ class Orm with Logged {
 
   Query select(String query, {List<Object>? params}) => Query(this, 'SELECT $query', params);
 
-  Query insert(String table, Map<String, Object> values) {
+  Query insert(String table, Map<String, Object> values, {bool ignore = false}) {
     String columns = values.entries.map<String>((_) => '?').toList().join(', ');
 
     return Query(
       this,
-      'INSERT INTO $table (${values.keys.join(', ')}) VALUES ($columns)',
+      'INSERT ${ignore ? 'IGNORE ' : ''}INTO $table (${values.keys.join(', ')}) VALUES ($columns)',
       values.values.toList(),
     );
   }
