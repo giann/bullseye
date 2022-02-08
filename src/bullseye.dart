@@ -79,12 +79,11 @@ class MyController {
     required Router router,
     required Request request,
     required LoggerService loggerService,
+    required Session session,
   }) {
     loggerService.general.warning('AYA!');
 
-    Session? session = request.attributes.session;
-
-    session?.data['count'] = session.data['count'].integerValue + 1;
+    session.data['count'] = session.data['count'].integerValue + 1;
 
     myForm.populate(request);
 

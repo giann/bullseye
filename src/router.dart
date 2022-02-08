@@ -140,14 +140,29 @@ class Router with Logged {
 
           if (redirect != null) {
             if (_registry[redirect] != null) {
-              response = _registry[redirect]!.call(parameters);
+              response = _registry[redirect]!.call(
+                parameters
+                  ..addAll(
+                    <String, dynamic>{
+                      'session': request.attributes.session,
+                    },
+                  ),
+              );
             } else {
               throw UnknownRoute('Unknown route `$redirect`');
             }
           }
         }
 
-        response = response ?? entry.value.call(parameters);
+        response = response ??
+            entry.value.call(
+              parameters
+                ..addAll(
+                  <String, dynamic>{
+                    'session': request.attributes.session,
+                  },
+                ),
+            );
 
         for (Hook hook in _hooks) {
           await hook.onResponse(request, response);
