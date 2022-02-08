@@ -103,7 +103,7 @@ class SessionHook extends Hook with Logged {
 }
 
 class DatabaseSessionStorage extends SessionStorage with Logged {
-  final Orm orm;
+  final MySqlOrm orm;
 
   DatabaseSessionStorage({
     SessionIdRetriever retriever = retrieveFromCookie,

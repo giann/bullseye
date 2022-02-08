@@ -142,7 +142,7 @@ class LoggingHook extends Hook with Logged {
 }
 
 void main() async {
-  Orm orm = Orm(mysql.ConnectionSettings(
+  MySqlOrm orm = MySqlOrm(mysql.ConnectionSettings(
     host: 'localhost',
     port: 3306,
     user: 'root',
@@ -155,7 +155,7 @@ void main() async {
   DependencyRegistry di = DependencyRegistry.current
     ..put<Env>(Env()..load())
     // TODO: should probably instanciate an on demand orm connection on a per request basis
-    ..put<Orm>(orm)
+    ..put<MySqlOrm>(orm)
     ..put<SessionStorage>(DatabaseSessionStorage(orm: orm))
     ..put<LoggerService>(LoggerService()..init())
     ..put<Router>(

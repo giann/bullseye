@@ -20,7 +20,7 @@ class NoMatchingField implements Exception {
 
 class Repository<T extends Entity> {
   final String table;
-  final Orm orm;
+  final MySqlOrm orm;
 
   Repository({required this.orm, required this.table});
 
@@ -130,7 +130,7 @@ void main() async {
   final LoggerService loggerService = LoggerService()..init();
   final Logger logger = loggerService.general;
 
-  Orm o = Orm(ConnectionSettings(
+  MySqlOrm o = MySqlOrm(ConnectionSettings(
     host: 'localhost',
     port: 3306,
     user: 'root',

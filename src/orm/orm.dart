@@ -14,7 +14,7 @@ class NotConnectedException implements Exception {
 }
 
 class Query {
-  final Orm _orm;
+  final MySqlOrm _orm;
   final String _query;
   final List<Object>? _params;
   Results? result;
@@ -24,11 +24,11 @@ class Query {
   Future<Results> execute() async => result = (await _orm.execute(_query, params: _params));
 }
 
-class Orm with Logged {
+class MySqlOrm with Logged {
   MySqlConnection? _connection;
   final ConnectionSettings _settings;
 
-  Orm(this._settings);
+  MySqlOrm(this._settings);
 
   Future<void> connect() async {
     _connection = await MySqlConnection.connect(_settings);
