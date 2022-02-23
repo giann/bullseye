@@ -23,6 +23,7 @@ A dart server-side web framework. **IN DEVELOPMENT**.
 -   [ ] Logging & Metrics
 -   [ ] [Redis](https://pub.dev/packages/redis)
 -   [ ] REST support with actual abstraction for resources etc.
+-   [ ] [Hot reload](https://pub.dev/packages/hotreloader)
 
 # Maybe
 

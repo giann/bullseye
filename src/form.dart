@@ -1,11 +1,14 @@
 import 'dart:collection';
+import 'dart:mirrors';
 
 import 'dom.dart' as d;
 import 'http.dart';
 
 import 'package:meta/meta.dart';
 
+import 'orm/entity.dart';
 import 'template.dart';
+import 'utils/mirror.dart';
 
 @immutable
 class Validator<T> {
@@ -127,6 +130,30 @@ class Form implements Template {
     required this.action,
     required this.fields,
   });
+
+  // static Form forEntity<T extends Entity>({
+  //   required T entity,
+  //   required String action,
+  //   String? name,
+  //   LinkedHashMap<String, Field>? additionalFields,
+  // }) {
+  //   InstanceMirror instanceMirror = reflect(entity);
+  //   ClassMirror classMirror = instanceMirror.type;
+
+  //   Form form = Form(
+  //     name: name ?? MirrorSystem.getName(classMirror.simpleName),
+  //     action: action,
+  //     fields: LinkedHashMap<String, Field>.from(<String, Field>{}),
+  //   );
+
+  //   for (DeclarationMirror decl in declarationsOf<T>(entity)) {
+  //     if (decl.isPrivate || decl is! VariableMirror || decl.isConst || decl.isFinal || decl.isStatic) continue;
+
+  //     // search for annotations
+  //   }
+
+  //   return form;
+  // }
 
   Field? operator [](String name) => fields[name];
   void operator []=(String name, Field field) => fields[name] = field;

@@ -32,7 +32,7 @@ class MyForm implements Template {
           if (session != null)
             p(
               children: [
-                text('User ${session!.id} visited this page ${session!.data['count'].integerValue}'),
+                text('User ${session!.id} visited this page ${session!['count'].integerValue}'),
               ],
             )
         ],
@@ -83,7 +83,7 @@ class MyController {
   }) {
     loggerService.general.warning('AYA!');
 
-    session.data['count'] = session.data['count'].integerValue + 1;
+    session['count'] = session['count'].integerValue + 1;
 
     myForm.populate(request);
 
@@ -142,13 +142,15 @@ class LoggingHook extends Hook with Logged {
 }
 
 void main() async {
-  MySqlOrm orm = MySqlOrm(mysql.ConnectionSettings(
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: 'test',
-    db: 'test',
-  ));
+  MySqlOrm orm = MySqlOrm(
+    mysql.ConnectionSettings(
+      host: 'localhost',
+      port: 3306,
+      user: 'root',
+      password: 'test',
+      db: 'test',
+    ),
+  );
 
   await orm.connect();
 
@@ -161,6 +163,7 @@ void main() async {
     ..put<Router>(
       Router()
         ..register(MyController())
+        ..registerHook(SessionHook())
         ..registerHook(LoggingHook()),
     );
 

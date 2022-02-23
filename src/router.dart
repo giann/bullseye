@@ -5,7 +5,6 @@ import 'package:meta/meta.dart';
 import 'http.dart';
 import 'injection.dart';
 import 'logger.dart';
-import 'session.dart';
 
 @immutable
 class Route {
@@ -86,9 +85,7 @@ abstract class Hook {
 class Router with Logged {
   final Map<String, Route> _routes = {};
   final Map<Route, RouteCall> _registry = {};
-  final Set<Hook> _hooks = {
-    SessionHook(),
-  };
+  final Set<Hook> _hooks = {};
 
   static final RegExp routeArgPattern = RegExp('{([a-zA-Z0-9_]+)}');
 
