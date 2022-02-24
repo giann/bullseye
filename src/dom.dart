@@ -70,13 +70,14 @@ class ElementNode extends Node {
 }
 
 ElementNode form({
+  required String id,
   String? action,
   String? method = 'post',
   Set<NodeAttribute> attributes = const {},
   List<Node> children = const [],
 }) {
   if (action != null) {
-    attributes = <NodeAttribute>{}
+    attributes = <NodeAttribute>{attr('id', id)}
       ..addAll(attributes)
       ..add(NodeAttribute(key: 'action', value: action));
   }
@@ -139,6 +140,8 @@ ElementNode input({
 }
 
 // Valid html tags factories
+ElementNode button({String? label, Set<NodeAttribute> attributes = const {}}) =>
+    ElementNode('button', attributes: attributes, children: [text(label ?? '')]);
 ElementNode a({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>
     ElementNode('a', attributes: attributes, children: children);
 ElementNode article({Set<NodeAttribute> attributes = const {}, List<Node> children = const []}) =>

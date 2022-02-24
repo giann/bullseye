@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'dart:collection';
 import 'dart:math';
 
@@ -8,6 +9,7 @@ import 'env.dart';
 import 'form.dart';
 import 'injection.dart';
 import 'logger.dart';
+import 'orm/entity.dart';
 import 'orm/orm.dart';
 import 'router.dart';
 import 'http.dart';
@@ -15,11 +17,26 @@ import 'server.dart';
 import 'session.dart';
 import 'template.dart';
 
-class MyForm implements Template {
-  Form myForm;
-  Session? session;
+@immutable
+@entity
+class Person {
+  @uuid4PrimaryKey
+  late final String id;
 
-  MyForm(this.myForm, this.session);
+  @column
+  late final String firstname;
+
+  @column
+  late final String lastname;
+
+  @Column(columnType: ColumnType.smallint)
+  late final int age;
+}
+
+class MyFormView implements Template {
+  Form myForm;
+
+  MyFormView(this.myForm);
 
   @override
   String render() => div(
@@ -29,41 +46,55 @@ class MyForm implements Template {
         children: [
           h1('Hello there!'),
           myForm.build(),
-          if (session != null)
-            p(
-              children: [
-                text('User ${session!.id} visited this page ${session!['count'].integerValue}'),
-              ],
-            )
         ],
       ).render();
 }
 
 class MyView implements Template {
-  String name;
+  Person person;
 
-  MyView(this.name);
+  MyView(this.person);
 
   @override
   String render() => div(
         children: [
-          h1('Hello $name'),
+          h1(
+            'Hello [${person.id}] '
+            '${person.firstname} ${person.lastname} '
+            'you are ${person.age} years old!',
+          ),
         ],
       ).render();
 }
 
 class MyController {
   Form myForm = Form(
-    name: 'greetings',
+    id: 'person',
     action: '/hello',
     fields: LinkedHashMap<String, Field>.from(
       <String, Field>{
-        'name': TextField(
-          name: 'name',
-          label: 'Wath\'s your name',
+        'firstname': TextField(
+          name: 'firstname',
+          label: 'What\'s your firstname',
           validators: [
-            Validator<String>.minLength(5),
-            Validator<String>.required(),
+            Validator.minLength(5),
+            Validator.required<String>(),
+          ],
+        ),
+        'lastname': TextField(
+          name: 'lastname',
+          label: 'What\'s your lastname',
+          validators: [
+            Validator.minLength(5),
+            Validator.required<String>(),
+          ],
+        ),
+        'age': NumberField(
+          name: 'age',
+          label: 'What\'s your age',
+          validators: [
+            Validator.required<int>(),
+            Validator.positive,
           ],
         ),
       },
@@ -75,17 +106,18 @@ class MyController {
     path: '/hello',
     methods: {'GET', 'POST'},
   )
-  Response hello({
+  Future<Response> hello({
     required Router router,
     required Request request,
     required LoggerService loggerService,
+    required MySqlOrm orm,
     required Session session,
-  }) {
+  }) async {
     loggerService.general.warning('AYA!');
 
-    session['count'] = session['count'].integerValue + 1;
-
     myForm.populate(request);
+
+    Repository<Person> repository = Repository<Person>(orm);
 
     if (request.method == 'POST' && myForm.isValid) {
       String name = myForm['name']?.value as String? ?? 'Unknown';
@@ -94,13 +126,33 @@ class MyController {
         return router.redirectToRoute('bye');
       }
 
+      // Persist as a [Person] entity
+      Person newPerson = Person();
+      newPerson.firstname = myForm['firstname']?.value as String? ?? 'Unknown';
+      newPerson.lastname = myForm['lastname']?.value as String? ?? 'Unknown';
+      newPerson.age = myForm['age']?.value as int? ?? 0;
+
+      repository.insert(newPerson);
+
+      // Save in session
+      session['person'] = newPerson.id;
+
       return Response.html(
-        MyView(name).render(),
+        MyView(newPerson).render(),
       );
+    } else if (request.method == 'GET' && session['person'].exists()) {
+      Person? person = await repository.firstWhere(
+        conditions: ['id = ?'],
+        params: [session['person'].stringValue],
+      );
+
+      if (person != null) {
+        return Response.html(MyView(person).render());
+      }
     }
 
     return Response.html(
-      MyForm(myForm, session).render(),
+      MyFormView(myForm).render(),
     );
   }
 
@@ -109,22 +161,7 @@ class MyController {
     path: '/bye',
     methods: {'GET'},
   )
-  Response bye({required Request request}) => Response.html(
-        h1('Goodbye').render(),
-      );
-
-  @Route(
-    name: 'login',
-    path: '/login/{id}',
-    methods: {'GET'},
-  )
-  Response login({
-    required Request request,
-    required String id,
-  }) =>
-      Response.html(
-        h1('You\'re logged in $id!').render(),
-      );
+  Future<Response> bye({required Request request}) async => Response.html(h1('Goodbye').render());
 }
 
 class LoggingHook extends Hook with Logged {
@@ -156,7 +193,7 @@ void main() async {
 
   DependencyRegistry di = DependencyRegistry.current
     ..put<Env>(Env()..load())
-    // TODO: should probably instanciate an on demand orm connection on a per request basis
+    // TODO: Instanciate an on demand orm connection on a per request basis
     ..put<MySqlOrm>(orm)
     ..put<SessionStorage>(DatabaseSessionStorage(orm: orm))
     ..put<LoggerService>(LoggerService()..init())

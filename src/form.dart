@@ -15,28 +15,25 @@ class Validator<T> {
 
   const Validator(this.name, this.validate);
 
-  factory Validator.required() => Validator(
+  static Validator<C> required<C>() => Validator<C>(
         'required',
-        (T? value) => value != null,
+        (C? value) => value != null,
       );
 
-  factory Validator.minLength(int length) => Validator<T>(
+  static Validator<String> minLength(int length) => Validator<String>(
         'minLength',
-        (T? value) {
-          if (value is! String) return false;
-
-          return value.length > length;
-        },
+        (String? value) => value != null ? value.length > length : true,
       );
 
-  factory Validator.maxLength(int length) => Validator<T>(
+  static Validator<String> maxLength(int length) => Validator<String>(
         'maxLength',
-        (T? value) {
-          if (value is! String) return false;
-
-          return value.length < length;
-        },
+        (String? value) => value != null ? value.length < length : true,
       );
+
+  static final positive = Validator<int>(
+    'positive',
+    (int? value) => value != null ? value >= 0 : true,
+  );
 }
 
 @immutable
@@ -52,7 +49,7 @@ class InvalidFieldValue implements Exception {
 
 abstract class Field<T> implements Template {
   String name;
-  T? Function(Request)? parser;
+  T? Function(String?)? parser;
   T? defaultValue;
   List<Validator<T>>? validators;
   T? value;
@@ -71,7 +68,7 @@ abstract class Field<T> implements Template {
 
     Map<String, String> raw = request.method == 'GET' ? request.url.queryParameters : request.bodyFields;
 
-    T? value = (parser != null ? parser!(request) : raw[name] as T?) ?? defaultValue;
+    T? value = (parser != null ? parser!(raw[name]) : raw[name] as T?) ?? defaultValue;
 
     for (Validator<T> validator in validators ?? []) {
       if (!validator.validate(value)) {
@@ -93,7 +90,7 @@ abstract class Field<T> implements Template {
 class TextField extends Field<String> {
   TextField({
     required String name,
-    String? Function(Request)? builder,
+    String? Function(String?)? builder,
     String? defaultValue,
     String? label,
     List<Validator<String>> validators = const <Validator<String>>[],
@@ -117,14 +114,41 @@ class TextField extends Field<String> {
       ];
 }
 
+class NumberField extends Field<int> {
+  NumberField({
+    required String name,
+    int? Function(String?)? builder,
+    int? defaultValue,
+    String? label,
+    List<Validator<int>> validators = const <Validator<int>>[],
+  }) : super(
+          name: name,
+          parser: builder ?? (String? raw) => raw != null ? int.parse(raw) : null,
+          defaultValue: defaultValue,
+          label: label,
+          validators: validators,
+        );
+
+  @override
+  List<d.Node> build() => [
+        ...super.build(),
+        d.input(
+          name: name,
+          attributes: {
+            if (value != null || defaultValue != null) d.attr('value', '${value ?? defaultValue ?? ''}'),
+          },
+        )
+      ];
+}
+
 class Form implements Template {
-  String name;
+  String id;
   String action;
   LinkedHashMap<String, Field> fields = LinkedHashMap();
   Map<String, List<InvalidFieldValue>> errors = {};
 
   Form({
-    required this.name,
+    required this.id,
     required this.action,
     LinkedHashMap<String, Field>? fields,
   }) : fields = fields ?? LinkedHashMap<String, Field>.from(<String, Field>{});
@@ -132,7 +156,7 @@ class Form implements Template {
   Form.forEntity(
     InterpretedEntity entity, {
     required this.action,
-  }) : name = entity.table {
+  }) : id = entity.table {
     for (MapEntry<String, Column> entry in entity.columns.entries) {
       switch (entry.value.columnType) {
         case ColumnType.int:
@@ -195,6 +219,7 @@ class Form implements Template {
   }
 
   d.Node build() => d.form(
+        id: id,
         action: action,
         children: [
           for (MapEntry<String, Field> entry in fields.entries) ...[
@@ -208,6 +233,12 @@ class Form implements Template {
                 ],
               ),
           ],
+          d.button(
+            label: 'Submit',
+            attributes: {
+              d.attr('form', id),
+            },
+          )
         ],
       );
 

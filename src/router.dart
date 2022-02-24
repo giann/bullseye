@@ -31,7 +31,7 @@ class Route {
 @immutable
 class RouteCall {
   final Route route;
-  final Response Function(Map<String, dynamic>) call;
+  final Future<Response> Function(Map<String, dynamic>) call;
 
   RouteCall({required this.route, required this.call});
 }
@@ -137,7 +137,7 @@ class Router with Logged {
 
           if (redirect != null) {
             if (_registry[redirect] != null) {
-              response = _registry[redirect]!.call(
+              response = await _registry[redirect]!.call(
                 parameters
                   ..addAll(
                     <String, dynamic>{
@@ -152,7 +152,7 @@ class Router with Logged {
         }
 
         response = response ??
-            entry.value.call(
+            await entry.value.call(
               parameters
                 ..addAll(
                   <String, dynamic>{
@@ -203,8 +203,8 @@ class Router with Logged {
   }
 
   void _methodMatchesRoute(MethodMirror method, Route route) {
-    if (method.returnType.reflectedType != Response) {
-      throw BadlyFormedRouteException('Route method should return a `Response`');
+    if (method.returnType.reflectedType != Future<Response>) {
+      throw BadlyFormedRouteException('Route method should return a `Future<Response>`');
     }
 
     // Get route placeholders
@@ -230,7 +230,7 @@ class Router with Logged {
     // We don't check here if parameters are matching the method arguments, this is done at register time
     _registry[route] = RouteCall(
       route: route,
-      call: (final Map<String, dynamic> parameters) {
+      call: (final Map<String, dynamic> parameters) async {
         Map<Symbol, dynamic> callParameters = <Symbol, dynamic>{};
         for (ParameterMirror parameter in method.parameters) {
           String paramName = MirrorSystem.getName(parameter.simpleName);
@@ -259,7 +259,7 @@ class Router with Logged {
           }
         }
 
-        return controller
+        return await controller
             .invoke(
               method.simpleName,
               <dynamic>[],

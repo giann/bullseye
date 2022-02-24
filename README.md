@@ -1,6 +1,7 @@
 # 🎯 bullseye
 
 A dart server-side web framework. **IN DEVELOPMENT**.
+For a basic usage see [here](https://github.com/giann/bullseye/blob/main/src/bullseye.dart).
 
 # Goals
 

@@ -199,7 +199,9 @@ class InterpretedEntity<T> {
       }
 
       if (field == null && column is Uuid4PrimaryKey) {
-        data[column.name!] = Uuid().v4(); // TODO: rely on MySQL to do that instead
+        String id = Uuid().v4();
+        instanceMirror.setField(Symbol(column.name!), id);
+        data[column.name!] = id; // TODO: rely on MySQL to do that instead
       } else if (field != null && field.hasReflectee) {
         data[column.name!] = field.reflectee as Object;
       }
@@ -259,6 +261,18 @@ class Repository<T> {
     return instance;
   }
 
+  Future<T?> firstWhere({
+    List<String> conditions = const <String>[],
+    List<Object> params = const <Object>[],
+  }) async {
+    List<T> results = await find(
+      conditions: conditions,
+      params: params,
+    );
+
+    return results.isNotEmpty ? results.first : null;
+  }
+
   Future<List<T>> find({
     List<String> conditions = const <String>[],
     List<Object> params = const <Object>[],
@@ -316,62 +330,4 @@ class Repository<T> {
 
     return orm.insert(interpreted.table, interpreted.getData(instance)).execute();
   }
-}
-
-@immutable
-@entity
-class Person {
-  @uuid4PrimaryKey
-  late final String id;
-
-  @column
-  late final String firstname;
-
-  @column
-  late final String lastname;
-
-  @Column(columnType: ColumnType.smallint)
-  late final int age;
-}
-
-void main() async {
-  final LoggerService loggerService = LoggerService()..init();
-  final Logger logger = loggerService.general;
-
-  MySqlOrm o = MySqlOrm(
-    ConnectionSettings(
-      host: 'localhost',
-      port: 3306,
-      user: 'root',
-      password: 'test',
-      db: 'test',
-    ),
-  );
-
-  Repository<Person> repository = Repository<Person>(o);
-
-  await o.connect();
-
-  Person newPerson = Person();
-  newPerson.firstname = 'Joe';
-  newPerson.lastname = 'Doe';
-  newPerson.age = 23;
-
-  await repository.insert(newPerson);
-
-  List<Person> persons = await repository.find();
-
-  if (persons.isNotEmpty) {
-    logger.warning(
-      'Hello [${persons.first.id}] '
-      '${persons.first.firstname} ${persons.first.lastname} '
-      'you are ${persons.first.age} years old!',
-    );
-  } else {
-    logger.severe('Not found');
-  }
-
-  await repository.delete();
-
-  o.close();
 }

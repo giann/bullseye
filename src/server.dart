@@ -28,6 +28,9 @@ class Server with Logged {
         httpRequest.response.close();
       } catch (e) {
         logger.severe('Error occured while processing request: $e');
+        if (e is Error) {
+          e.stackTrace?.toString().split('\n').forEach((line) => logger.severe(line));
+        }
         httpRequest.response.statusCode = 500;
         httpRequest.response.write('Error occured while processing request: $e');
       }
