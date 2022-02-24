@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:mirrors';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
@@ -51,11 +52,13 @@ class Column {
   final String? name;
   final ColumnType? columnType;
   final List<Validator> validators;
+  final dynamic defaultValue;
 
   const Column({
     this.name,
     this.columnType,
     this.validators = const [],
+    this.defaultValue,
   });
 }
 
@@ -95,7 +98,7 @@ const uuid4PrimaryKey = Uuid4PrimaryKey();
 class InterpretedEntity<T> {
   late final String table;
   late final List<String> primaryKeys = [];
-  late final Map<String, Column> columns = {};
+  late final LinkedHashMap<String, Column> columns = LinkedHashMap();
   // TODO
   // late final Map<String, dynamic> relations;
 
@@ -327,7 +330,7 @@ class Person {
   @column
   late final String lastname;
 
-  @column
+  @Column(columnType: ColumnType.smallint)
   late final int age;
 }
 

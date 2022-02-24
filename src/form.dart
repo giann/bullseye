@@ -1,5 +1,4 @@
 import 'dart:collection';
-import 'dart:mirrors';
 
 import 'dom.dart' as d;
 import 'http.dart';
@@ -8,7 +7,6 @@ import 'package:meta/meta.dart';
 
 import 'orm/entity.dart';
 import 'template.dart';
-import 'utils/mirror.dart';
 
 @immutable
 class Validator<T> {
@@ -122,38 +120,64 @@ class TextField extends Field<String> {
 class Form implements Template {
   String name;
   String action;
-  LinkedHashMap<String, Field> fields;
+  LinkedHashMap<String, Field> fields = LinkedHashMap();
   Map<String, List<InvalidFieldValue>> errors = {};
 
   Form({
     required this.name,
     required this.action,
-    required this.fields,
-  });
+    LinkedHashMap<String, Field>? fields,
+  }) : fields = fields ?? LinkedHashMap<String, Field>.from(<String, Field>{});
 
-  // static Form forEntity<T extends Entity>({
-  //   required T entity,
-  //   required String action,
-  //   String? name,
-  //   LinkedHashMap<String, Field>? additionalFields,
-  // }) {
-  //   InstanceMirror instanceMirror = reflect(entity);
-  //   ClassMirror classMirror = instanceMirror.type;
-
-  //   Form form = Form(
-  //     name: name ?? MirrorSystem.getName(classMirror.simpleName),
-  //     action: action,
-  //     fields: LinkedHashMap<String, Field>.from(<String, Field>{}),
-  //   );
-
-  //   for (DeclarationMirror decl in declarationsOf<T>(entity)) {
-  //     if (decl.isPrivate || decl is! VariableMirror || decl.isConst || decl.isFinal || decl.isStatic) continue;
-
-  //     // search for annotations
-  //   }
-
-  //   return form;
-  // }
+  Form.forEntity(
+    InterpretedEntity entity, {
+    required this.action,
+  }) : name = entity.table {
+    for (MapEntry<String, Column> entry in entity.columns.entries) {
+      switch (entry.value.columnType) {
+        case ColumnType.int:
+        case ColumnType.bigint:
+        case ColumnType.decimal:
+        case ColumnType.money:
+        case ColumnType.numeric:
+        case ColumnType.smallint:
+        case ColumnType.smallmoney:
+        case ColumnType.tinyint:
+        case ColumnType.float:
+        case ColumnType.real:
+          throw UnimplementedError('${entry.value.columnType} not implemented yet');
+        case ColumnType.bit:
+          throw UnimplementedError('${entry.value.columnType} not implemented yet');
+        case ColumnType.date:
+          throw UnimplementedError('${entry.value.columnType} not implemented yet');
+        case ColumnType.datetime:
+        case ColumnType.timestamp:
+          throw UnimplementedError('${entry.value.columnType} not implemented yet');
+        case ColumnType.time:
+          throw UnimplementedError('${entry.value.columnType} not implemented yet');
+        case ColumnType.char:
+        case ColumnType.varchar:
+        case ColumnType.uniqueidentifier:
+          fields[entry.key] = TextField(
+            name: entry.key,
+            defaultValue: entry.value.defaultValue is String ? entry.value.defaultValue as String : null,
+            label: '${entry.key[0].toUpperCase()}${entry.key.substring(1)}',
+            validators: entry.value.validators is List<Validator<String>>
+                ? entry.value.validators as List<Validator<String>>
+                : [],
+          );
+          break;
+        case ColumnType.xml:
+        case ColumnType.text:
+          throw UnimplementedError('${entry.value.columnType} not implemented yet');
+        case ColumnType.binary:
+        case ColumnType.image:
+          throw UnimplementedError('${entry.value.columnType} not implemented yet');
+        default:
+          throw UnimplementedError('${entry.value.columnType} not implemented yet');
+      }
+    }
+  }
 
   Field? operator [](String name) => fields[name];
   void operator []=(String name, Field field) => fields[name] = field;
