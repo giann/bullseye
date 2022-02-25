@@ -1,7 +1,10 @@
 import 'package:meta/meta.dart';
 import 'package:mysql1/mysql1.dart';
-
+import '../configuration.dart';
+import '../http.dart';
+import '../injection.dart';
 import '../logger.dart';
+import '../router.dart';
 
 @immutable
 class NotConnectedException implements Exception {
@@ -28,10 +31,16 @@ class MySqlOrm with Logged {
   MySqlConnection? _connection;
   final ConnectionSettings _settings;
 
-  MySqlOrm(this._settings);
+  MySqlOrm()
+      : _settings =
+            DependencyRegistry.current.get<Configuration>().get<ConnectionSettings>('orm', 'connectionSettings');
 
   Future<void> connect() async {
-    _connection = await MySqlConnection.connect(_settings);
+    _connection ??= await MySqlConnection.connect(_settings);
+
+    // FIXME: MySqlConnection.connect does not wait for db to be initialized it seems
+    // https://github.com/adamlofts/mysql1_dart/issues/114
+    await Future<void>.delayed(Duration(milliseconds: 100));
 
     logger.fine('Connection to database `${_settings.db}` opened');
   }
@@ -44,8 +53,7 @@ class MySqlOrm with Logged {
 
   Future<Results> execute(String query, {List<Object>? params}) async {
     if (_connection == null) {
-      logger.severe('Not connected to database');
-      throw NotConnectedException();
+      await connect();
     }
 
     Results results = await _connection!.query(query, params);
@@ -96,4 +104,13 @@ class MySqlOrm with Logged {
       params,
     );
   }
+}
+
+class MySqlOrmHook extends RoutingHook {
+  @override
+  Future<void> onResponse(
+    Request request,
+    Response response,
+  ) async =>
+      DependencyRegistry.current.getOpt<MySqlOrm>()?.close();
 }

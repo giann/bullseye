@@ -1,9 +1,16 @@
 import 'logger.dart';
 
 class Dependency<T> {
-  T instance;
+  final T? _instance;
+  final T Function()? builder;
 
-  Dependency(this.instance);
+  T get instance => _instance ?? builder!();
+
+  Dependency({T? instance, this.builder}) : _instance = instance {
+    if (instance == null && builder == null) {
+      throw ArgumentError('Either provide an instance or a builder');
+    }
+  }
 
   @override
   bool operator ==(dynamic other) => other is T;
@@ -17,12 +24,12 @@ class DependencyRegistry with Logged {
 
   Set<Dependency> dependencies = {};
 
-  T? get<T>() {
+  T get<T>() => dependencies.firstWhere((dep) => dep.instance is T).instance as T;
+
+  T? getOpt<T>() {
     try {
       return dependencies.firstWhere((dep) => dep.instance is T).instance as T;
-    } on StateError catch (_) {
-      return null;
-    }
+    } catch (_) {}
   }
 
   dynamic getRuntime(Type t) {
@@ -33,8 +40,8 @@ class DependencyRegistry with Logged {
     }
   }
 
-  void put<T>(T instance) {
-    dependencies.add(Dependency<T>(instance));
+  void put<T>({T? instance, T Function()? builder}) {
+    dependencies.add(Dependency<T>(instance: instance, builder: builder));
 
     logger.config('Service `$T` registered');
   }

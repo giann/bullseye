@@ -5,6 +5,7 @@ import 'package:mysql1/mysql1.dart';
 import 'package:uuid/uuid.dart';
 
 import '../form.dart';
+import '../injection.dart';
 import '../utils/mirror.dart';
 import 'orm.dart';
 
@@ -228,10 +229,9 @@ class NotAnEntityException implements Exception {
 }
 
 class Repository<T> {
-  final MySqlOrm orm;
   final InterpretedEntity _interpreted = InterpretedEntity<T>();
 
-  Repository(this.orm);
+  Repository();
 
   T _produceFrom(ResultRow row) {
     TypeMirror typeMirror = reflectType(T);
@@ -275,6 +275,8 @@ class Repository<T> {
     List<String> conditions = const <String>[],
     List<Object> params = const <Object>[],
   }) async {
+    final orm = DependencyRegistry.current.get<MySqlOrm>();
+
     String whereClause = ' where ${conditions.join(' AND ')}';
 
     Results results = await orm.select(
@@ -292,6 +294,8 @@ class Repository<T> {
     List<String> conditions = const [],
     List<Object> params = const [],
   }) async {
+    final orm = DependencyRegistry.current.get<MySqlOrm>();
+
     Map<String, Object> data = instance != null ? _interpreted.getData(instance) : {};
 
     List<String> pkConditions = [];
@@ -323,7 +327,19 @@ class Repository<T> {
     return results.affectedRows ?? 0;
   }
 
-  Future<void> insert(T instance) => orm.insert(_interpreted.table, _interpreted.getData(instance)).execute();
+  Future<void> insert(T instance) => DependencyRegistry.current
+      .get<MySqlOrm>()
+      .insert(
+        _interpreted.table,
+        _interpreted.getData(instance),
+      )
+      .execute();
 
-  Future<void> update(T instance) => orm.update(_interpreted.table, _interpreted.getData(instance)).execute();
+  Future<void> update(T instance) => DependencyRegistry.current
+      .get<MySqlOrm>()
+      .update(
+        _interpreted.table,
+        _interpreted.getData(instance),
+      )
+      .execute();
 }

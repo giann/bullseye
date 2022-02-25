@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:mirrors';
 
 import 'package:meta/meta.dart';
@@ -31,7 +32,7 @@ class Route {
 @immutable
 class RouteCall {
   final Route route;
-  final Future<Response> Function(Map<String, dynamic>) call;
+  final Future<Response> Function(Request, Map<String, dynamic>) call;
 
   RouteCall({required this.route, required this.call});
 }
@@ -76,16 +77,16 @@ class UnknownRoute implements Exception {
   String toString() => _message ?? 'Unknown route';
 }
 
-abstract class Hook {
-  Future<String?> onDispatch(Request request, Route matchedRoute);
+abstract class RoutingHook {
+  Future<String?> onDispatch(Request request, Route matchedRoute) async => null;
 
-  Future<void> onResponse(Request request, Response response);
+  Future<void> onResponse(Request request, Response response) async {}
 }
 
 class Router with Logged {
   final Map<String, Route> _routes = {};
   final Map<Route, RouteCall> _registry = {};
-  final Set<Hook> _hooks = {};
+  final LinkedHashSet<RoutingHook> _hooks = LinkedHashSet<RoutingHook>();
 
   static final RegExp routeArgPattern = RegExp('{([a-zA-Z0-9_]+)}');
 
@@ -132,12 +133,13 @@ class Router with Logged {
 
         Response? response;
 
-        for (Hook hook in _hooks) {
+        for (RoutingHook hook in _hooks) {
           String? redirect = await hook.onDispatch(request, entry.key);
 
           if (redirect != null) {
             if (_registry[redirect] != null) {
               response = await _registry[redirect]!.call(
+                request,
                 parameters
                   ..addAll(
                     <String, dynamic>{
@@ -151,19 +153,13 @@ class Router with Logged {
           }
         }
 
-        response = response ??
-            await entry.value.call(
-              parameters
-                ..addAll(
-                  <String, dynamic>{
-                    'session': request.attributes.session,
-                  },
-                ),
-            );
+        parameters.addAll(
+          <String, dynamic>{
+            'session': request.attributes.session,
+          },
+        );
 
-        for (Hook hook in _hooks) {
-          await hook.onResponse(request, response);
-        }
+        response = response ?? await entry.value.call(request, parameters);
 
         return response;
       }
@@ -173,7 +169,7 @@ class Router with Logged {
     return Response.html('Route not found', statusCode: 404);
   }
 
-  void registerHook(Hook hook) => _hooks.add(hook);
+  void registerHook(RoutingHook hook) => _hooks.add(hook);
 
   void register(dynamic controller) {
     InstanceMirror instanceMirror = reflect(controller);
@@ -230,7 +226,7 @@ class Router with Logged {
     // We don't check here if parameters are matching the method arguments, this is done at register time
     _registry[route] = RouteCall(
       route: route,
-      call: (final Map<String, dynamic> parameters) async {
+      call: (Request request, Map<String, dynamic> parameters) async {
         Map<Symbol, dynamic> callParameters = <Symbol, dynamic>{};
         for (ParameterMirror parameter in method.parameters) {
           String paramName = MirrorSystem.getName(parameter.simpleName);
@@ -259,13 +255,26 @@ class Router with Logged {
           }
         }
 
-        return await controller
+        parameters = callParameters.map<String, dynamic>(
+          (Symbol key, dynamic value) => MapEntry<String, dynamic>(MirrorSystem.getName(key), value),
+        );
+
+        Response response = await controller
             .invoke(
               method.simpleName,
               <dynamic>[],
               callParameters,
             )
             .reflectee as Response;
+
+        for (RoutingHook hook in _hooks) {
+          await hook.onResponse(
+            request,
+            response,
+          );
+        }
+
+        return response;
       },
     );
 

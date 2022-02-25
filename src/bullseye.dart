@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:mysql1/mysql1.dart' as mysql;
 
+import 'configuration.dart';
 import 'dom.dart';
 import 'env.dart';
 import 'form.dart';
@@ -117,7 +118,7 @@ class MyController {
 
     myForm.populate(request);
 
-    Repository<Person> repository = Repository<Person>(orm);
+    Repository<Person> repository = Repository<Person>();
 
     if (request.method == 'POST' && myForm.isValid) {
       String name = myForm['name']?.value as String? ?? 'Unknown';
@@ -132,7 +133,7 @@ class MyController {
       newPerson.lastname = myForm['lastname']?.value as String? ?? 'Unknown';
       newPerson.age = myForm['age']?.value as int? ?? 0;
 
-      repository.insert(newPerson);
+      await repository.insert(newPerson);
 
       // Save in session
       session['person'] = newPerson.id;
@@ -164,47 +165,32 @@ class MyController {
   Future<Response> bye({required Request request}) async => Response.html(h1('Goodbye').render());
 }
 
-class LoggingHook extends Hook with Logged {
-  @override
-  Future<String?> onDispatch(Request request, Route matchedRoute) async {
-    logger.info("Matched [${request.method.toUpperCase()}] ${matchedRoute.name}");
-
-    return null;
-  }
-
-  @override
-  Future<void> onResponse(Request request, Response response) async {
-    logger.info("Will respond:\n${response.body.substring(0, min(150, response.body.length))}...");
-  }
-}
-
 void main() async {
-  MySqlOrm orm = MySqlOrm(
-    mysql.ConnectionSettings(
-      host: 'localhost',
-      port: 3306,
-      user: 'root',
-      password: 'test',
-      db: 'test',
-    ),
-  );
-
-  await orm.connect();
-
   DependencyRegistry di = DependencyRegistry.current
-    ..put<Env>(Env()..load())
-    // TODO: Instanciate an on demand orm connection on a per request basis
-    ..put<MySqlOrm>(orm)
-    ..put<SessionStorage>(DatabaseSessionStorage(orm: orm))
-    ..put<LoggerService>(LoggerService()..init())
+    ..put<Env>(instance: Env()..load())
+    ..put<Configuration>(
+      instance: Configuration()
+        ..set<mysql.ConnectionSettings>(
+          'orm',
+          'connectionSettings',
+          mysql.ConnectionSettings(
+            host: 'localhost',
+            port: 3306,
+            user: 'root',
+            password: 'test',
+            db: 'test',
+          ),
+        ),
+    )
+    ..put<MySqlOrm>(builder: () => MySqlOrm())
+    ..put<SessionStorage>(instance: DatabaseSessionStorage())
+    ..put<LoggerService>(instance: LoggerService())
     ..put<Router>(
-      Router()
+      instance: Router()
         ..register(MyController())
         ..registerHook(SessionHook())
-        ..registerHook(LoggingHook()),
+        ..registerHook(MySqlOrmHook()),
     );
 
-  await Server(router: di.get<Router>()!).run();
-
-  orm.close();
+  await Server(router: di.get<Router>()).run();
 }

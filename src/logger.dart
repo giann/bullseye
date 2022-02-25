@@ -6,7 +6,7 @@ import 'package:logging/logging.dart';
 class LoggerService {
   final Logger general = Logger('general');
 
-  void init() {
+  LoggerService() {
     Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((record) {
       AnsiPen pen = AnsiPen();

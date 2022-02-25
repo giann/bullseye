@@ -97,14 +97,12 @@ abstract class SessionStorage {
   Future<void> delete(String sessionId);
 }
 
-class SessionHook extends Hook with Logged {
+class SessionHook extends RoutingHook with Logged {
   @override
   Future<String?> onDispatch(Request request, Route matchedRoute) async {
     SessionStorage? sessionStorage = DependencyRegistry.current.get<SessionStorage>();
 
-    if (sessionStorage != null) {
-      request.attributes.session = await sessionStorage.load(request);
-    }
+    request.attributes.session = await sessionStorage.load(request);
   }
 
   @override
@@ -112,7 +110,7 @@ class SessionHook extends Hook with Logged {
     SessionStorage? sessionStorage = DependencyRegistry.current.get<SessionStorage>();
     Session? session = request.attributes.session;
 
-    if (sessionStorage != null && session != null) {
+    if (session != null) {
       await sessionStorage.write(session);
       String? setCookie = response.headers['set-cookie'];
       response.headers['set-cookie'] = '${setCookie != null ? '$setCookie;' : ''}bullseye_session_id=${session.id}';
@@ -121,15 +119,14 @@ class SessionHook extends Hook with Logged {
 }
 
 class DatabaseSessionStorage extends SessionStorage with Logged {
-  final MySqlOrm orm;
-
   DatabaseSessionStorage({
     SessionIdRetriever retriever = retrieveFromCookie,
-    required this.orm,
   }) : super(retriever);
 
   @override
   Future<void> delete(String sessionId) async {
+    final orm = DependencyRegistry.current.get<MySqlOrm>();
+
     bool deleted =
         (await orm.delete('session', conditions: ['id = ?'], params: [sessionId]).execute()).affectedRows == 1;
 
@@ -140,6 +137,8 @@ class DatabaseSessionStorage extends SessionStorage with Logged {
 
   @override
   Future<Session?> read(String sessionId) async {
+    final orm = DependencyRegistry.current.get<MySqlOrm>();
+
     Results results = await orm.select('id, created_at, expires_at, data from session').execute();
 
     if (results.length == 1) {
@@ -159,6 +158,8 @@ class DatabaseSessionStorage extends SessionStorage with Logged {
   @override
   Future<void> write(Session session) async {
     super.write(session);
+
+    final orm = DependencyRegistry.current.get<MySqlOrm>();
 
     await orm.execute(
       'INSERT INTO session (id, created_at, expires_at, data) VALUES (?, ?, ?, ?)'
