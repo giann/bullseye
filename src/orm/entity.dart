@@ -1,12 +1,10 @@
 import 'dart:collection';
 import 'dart:mirrors';
-import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:mysql1/mysql1.dart';
 import 'package:uuid/uuid.dart';
 
 import '../form.dart';
-import '../logger.dart';
 import '../utils/mirror.dart';
 import 'orm.dart';
 

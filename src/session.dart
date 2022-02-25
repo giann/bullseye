@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:darty_json/darty_json.dart';
 import 'package:mysql1/mysql1.dart';
 import 'package:uuid/uuid.dart';
@@ -28,6 +29,8 @@ class Session {
   void operator []=(String key, dynamic value) => data[key] = value;
 
   bool get isExpired => expiresAt.isBefore(DateTime.now());
+
+  int get size => data.toString().codeUnits.length;
 }
 
 typedef SessionIdRetriever = Future<String?> Function(Request);
@@ -39,13 +42,28 @@ Future<String?> retrieveFromCookie(Request request) async {
   return cookie['bullseye_session_id'];
 }
 
+class SessionSizeLimitExceeded implements Exception {
+  final String? _message;
+
+  SessionSizeLimitExceeded([this._message]);
+
+  @override
+  String toString() => _message ?? 'Session size exceeded';
+}
+
 abstract class SessionStorage {
   final SessionIdRetriever retriever;
   final Map<String, Session> _sessionCache = {};
+  final int? sizeLimit;
 
-  SessionStorage(this.retriever);
+  SessionStorage(this.retriever, {this.sizeLimit});
 
-  Future<void> write(Session session);
+  @mustCallSuper
+  Future<void> write(Session session) async {
+    if (sizeLimit != null && session.size > sizeLimit!) {
+      throw SessionSizeLimitExceeded('Session size exceeded (limit is $sizeLimit bytes)');
+    }
+  }
 
   Future<Session?> read(String sessionId);
 
@@ -140,6 +158,8 @@ class DatabaseSessionStorage extends SessionStorage with Logged {
 
   @override
   Future<void> write(Session session) async {
+    super.write(session);
+
     await orm.execute(
       'INSERT INTO session (id, created_at, expires_at, data) VALUES (?, ?, ?, ?)'
       '  ON DUPLICATE KEY UPDATE created_at = ?, expires_at = ?, data = ?',
