@@ -11,12 +11,26 @@ class TestController {
     path: '/hello',
     methods: {'GET'},
   )
-  Future<Response> bye({required Request request}) async => Response.html(text('hello').render());
+  Future<Response> hello({required Request request}) async => Response.html(text('hello').render());
+
+  @Route(
+    name: 'hello',
+    path: '/hello',
+    methods: {'POST'},
+  )
+  Future<Response> helloPost({required Request request}) async => Response.html(text('hello post').render());
+
+  @Route(
+    name: 'bye',
+    path: '/bye',
+    methods: {'GET'},
+  )
+  Future<Response> bye({required Request request}) async => Response.html(text('bye').render());
 }
 
 void main() {
   test(
-    'Routes to approriate route',
+    'Routes to appropriate route',
     () async {
       final Router router = Router()..register(TestController());
 

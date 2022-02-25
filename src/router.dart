@@ -222,6 +222,11 @@ class Router with Logged {
   }
 
   void _registerRoute(InstanceMirror controller, MethodMirror method, Route route) {
+    if (_routes[route.name] != null) {
+      logger.warning('A route named ${route.name} already exists, skipping this one.');
+      return;
+    }
+
     // Register a function that will inject parameters as method arguments
     // We don't check here if parameters are matching the method arguments, this is done at register time
     _registry[route] = RouteCall(

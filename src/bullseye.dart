@@ -134,7 +134,7 @@ class MyController {
 
       await repository.insert(newPerson);
 
-      // Save in session
+      // Save id in session
       session['person'] = newPerson.id;
 
       return Response.html(
