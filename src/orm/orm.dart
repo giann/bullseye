@@ -33,10 +33,6 @@ class MySqlOrm with Logged {
   Future<void> connect() async {
     _connection = await MySqlConnection.connect(_settings);
 
-    // MySqlConnection.connect does not wait for db to be initialized it seems
-    // https://github.com/adamlofts/mysql1_dart/issues/114
-    await Future<void>.delayed(Duration(milliseconds: 500));
-
     logger.fine('Connection to database `${_settings.db}` opened');
   }
 

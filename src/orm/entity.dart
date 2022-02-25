@@ -325,9 +325,7 @@ class Repository<T> {
     return results.affectedRows ?? 0;
   }
 
-  Future<void> insert(T instance) {
-    final InterpretedEntity interpreted = InterpretedEntity<T>();
+  Future<void> insert(T instance) => orm.insert(_interpreted.table, _interpreted.getData(instance)).execute();
 
-    return orm.insert(interpreted.table, interpreted.getData(instance)).execute();
-  }
+  Future<void> update(T instance) => orm.update(_interpreted.table, _interpreted.getData(instance)).execute();
 }
