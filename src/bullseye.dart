@@ -76,26 +76,26 @@ class MyController {
         'firstname': TextField(
           name: 'firstname',
           label: 'What\'s your firstname',
-          validators: [
+          validators: {
             Validator.minLength(5),
             Validator.required<String>(),
-          ],
+          },
         ),
         'lastname': TextField(
           name: 'lastname',
           label: 'What\'s your lastname',
-          validators: [
+          validators: {
             Validator.minLength(5),
             Validator.required<String>(),
-          ],
+          },
         ),
         'age': NumberField(
           name: 'age',
           label: 'What\'s your age',
-          validators: [
+          validators: {
             Validator.required<int>(),
             Validator.positive,
-          ],
+          },
         ),
       },
     ),

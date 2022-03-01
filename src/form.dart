@@ -51,7 +51,7 @@ abstract class Field<T> implements Template {
   String name;
   T? Function(String?)? parser;
   T? defaultValue;
-  List<Validator<T>>? validators;
+  Set<Validator<T>>? validators;
   T? _value;
   String? label;
 
@@ -95,7 +95,7 @@ class TextField extends Field<String> {
     String? Function(String?)? builder,
     String? defaultValue,
     String? label,
-    List<Validator<String>> validators = const <Validator<String>>[],
+    Set<Validator<String>> validators = const <Validator<String>>{},
   }) : super(
           name: name,
           parser: builder,
@@ -122,7 +122,7 @@ class NumberField extends Field<int> {
     int? Function(String?)? builder,
     int? defaultValue,
     String? label,
-    List<Validator<int>> validators = const <Validator<int>>[],
+    Set<Validator<int>> validators = const <Validator<int>>{},
   }) : super(
           name: name,
           parser: builder ?? (String? raw) => raw != null ? int.parse(raw) : null,
@@ -188,9 +188,9 @@ class Form implements Template {
             name: entry.key,
             defaultValue: entry.value.defaultValue is String ? entry.value.defaultValue as String : null,
             label: '${entry.key[0].toUpperCase()}${entry.key.substring(1)}',
-            validators: entry.value.validators is List<Validator<String>>
-                ? entry.value.validators as List<Validator<String>>
-                : [],
+            validators: entry.value.validators is Set<Validator<String>>
+                ? entry.value.validators as Set<Validator<String>>
+                : {},
           );
           break;
         case ColumnType.xml:
