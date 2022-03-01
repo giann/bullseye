@@ -60,5 +60,5 @@ class BadConfigurationValueType implements Exception {
   BadConfigurationValueType([this._message]);
 
   @override
-  String toString() => _message ?? 'Configuration value type is not of expected type';
+  String toString() => _message ?? 'Configuration value is not of expected type';
 }

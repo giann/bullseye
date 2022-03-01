@@ -52,7 +52,7 @@ abstract class Field<T> implements Template {
   T? Function(String?)? parser;
   T? defaultValue;
   List<Validator<T>>? validators;
-  T? value;
+  T? _value;
   String? label;
 
   Field({
@@ -76,7 +76,7 @@ abstract class Field<T> implements Template {
       }
     }
 
-    this.value = value;
+    _value = value;
   }
 
   List<d.Node> build() => [
@@ -85,6 +85,8 @@ abstract class Field<T> implements Template {
 
   @override
   String render() => build().map<String>((d.Node node) => node.render()).join();
+
+  C? getValue<C>() => C == T ? _value as C : null;
 }
 
 class TextField extends Field<String> {
@@ -108,7 +110,7 @@ class TextField extends Field<String> {
         d.input(
           name: name,
           attributes: {
-            if (value != null || defaultValue != null) d.attr('value', value ?? defaultValue ?? ''),
+            if (_value != null || defaultValue != null) d.attr('value', _value ?? defaultValue ?? ''),
           },
         )
       ];
@@ -135,7 +137,7 @@ class NumberField extends Field<int> {
         d.input(
           name: name,
           attributes: {
-            if (value != null || defaultValue != null) d.attr('value', '${value ?? defaultValue ?? ''}'),
+            if (_value != null || defaultValue != null) d.attr('value', '${_value ?? defaultValue ?? ''}'),
           },
         )
       ];

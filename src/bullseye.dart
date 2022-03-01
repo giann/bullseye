@@ -120,7 +120,7 @@ class MyController {
     Repository<Person> repository = Repository<Person>();
 
     if (request.method == 'POST' && myForm.isValid) {
-      String name = myForm['name']?.value as String? ?? 'Unknown';
+      String name = myForm['name']?.getValue<String>() ?? 'Unknown';
 
       if (name == "bye") {
         return router.redirectToRoute('bye');
@@ -128,9 +128,9 @@ class MyController {
 
       // Persist as a [Person] entity
       Person newPerson = Person();
-      newPerson.firstname = myForm['firstname']?.value as String? ?? 'Unknown';
-      newPerson.lastname = myForm['lastname']?.value as String? ?? 'Unknown';
-      newPerson.age = myForm['age']?.value as int? ?? 0;
+      newPerson.firstname = myForm['firstname']?.getValue<String>() ?? 'Unknown';
+      newPerson.lastname = myForm['lastname']?.getValue<String>() ?? 'Unknown';
+      newPerson.age = myForm['age']?.getValue<int>() ?? 0;
 
       await repository.insert(newPerson);
 
